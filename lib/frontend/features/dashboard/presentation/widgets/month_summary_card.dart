@@ -148,7 +148,9 @@ class MonthSummaryCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Saldo acumulado',
+                  isCurrent
+                      ? 'Saldo acumulado'
+                      : 'Saldo dos lançamentos até o mês',
                   style: TextStyle(fontSize: 14, color: p.secondaryText),
                 ),
               ),
@@ -209,7 +211,7 @@ class MonthSummaryCard extends StatelessWidget {
       (true, true, true) =>
         'As saídas e contas em aberto passam do que entrou em ${Money.brl(-available)}.',
       (true, true, false) =>
-        'Sobram ${Money.brl(available / (days - now.day + 1))} por dia até o fim do mês'
+        'Estimativa de ${Money.brl(available / (days - now.day + 1))} por dia até o fim do mês'
             '${pendingBills > 0 ? ', separando ${Money.brl(pendingBills)} para contas em aberto' : ''}.',
     };
     return DecoratedBox(

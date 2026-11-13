@@ -720,9 +720,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   double _pendingBillsThisMonth(DateTime now) {
+    final monthStart = DateTime(now.year, now.month);
     final nextMonth = DateTime(now.year, now.month + 1);
-    // Recurring transaction amounts already contribute to the monthly totals.
-    return _repository.reminders
+    final reminderTotal = _repository.reminders
         .where(
           (item) =>
               item.type == ReminderType.billPayment &&
@@ -730,6 +730,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
               item.targetDate.isBefore(nextMonth),
         )
         .fold(0.0, (sum, item) => sum + (item.amount ?? 0));
+    // Recurrences recorded this month are already included in monthExpense.
+    final priorRecurrences = _repository.upcomingRecurrences
+        .where((tx) => tx.date.isBefore(monthStart))
+        .map((tx) => tx.id)
+        .toSet();
+    final recurringTotal = _repository
+        .getUpcomingBills(
+          start: monthStart,
+          end: nextMonth.subtract(const Duration(milliseconds: 1)),
+        )
+        .where((bill) =>
+            bill['source'] == 'transaction' &&
+            priorRecurrences.contains(bill['id']))
+        .fold<double>(0.0, (sum, bill) => sum + (bill['amount'] as double));
+    return reminderTotal + recurringTotal;
   }
 
   void _openAlert(ProactiveAlert alert) {
