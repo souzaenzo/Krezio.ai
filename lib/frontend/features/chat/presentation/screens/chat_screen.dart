@@ -4,6 +4,7 @@ import '../../../../../ai/local_nlp_engine.dart';
 import '../../../../../ai/chat_draft_tracker.dart';
 import '../../../../../ai/transaction_code.dart';
 import '../../../../theme/krezio_theme.dart';
+import '../../../../widgets/krezio_components.dart';
 import '../../../../../backend/repositories/financial_repository.dart';
 import '../../../../navigation/krezio_routes.dart';
 import '../../../../../backend/services/feedback_service.dart';
@@ -82,7 +83,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final FocusNode _messageFocus = FocusNode();
   final ScrollController _scrollController = ScrollController();
   final List<ChatMessage> _messages = [];
-  
+
   final stt.SpeechToText _speech = stt.SpeechToText();
   bool _isListening = false;
   bool _speechEnabled = false;
@@ -110,10 +111,12 @@ class _ChatScreenState extends State<ChatScreen> {
 
   /// Edit/delete/undo by chat, corrections and questions about the data —
   /// shared with the voice conversation so both keep the same context.
-  late final CesarAssistant? _assistant =
-      widget.repository == null ? null : CesarAssistant(repository: widget.repository!, engine: widget.engine);
+  late final CesarAssistant? _assistant = widget.repository == null
+      ? null
+      : CesarAssistant(repository: widget.repository!, engine: widget.engine);
 
-  late final VoiceConversationController _voiceController = VoiceConversationController(
+  late final VoiceConversationController _voiceController =
+      VoiceConversationController(
     engine: widget.engine,
     repository: widget.repository,
     voiceSynthesisService: _voiceSynthesis,
@@ -138,9 +141,15 @@ class _ChatScreenState extends State<ChatScreen> {
       'Dividir & Empréstimos',
       Icons.group_outlined,
       [
-        ('Dividir conta do jantar', 'Fui em um jantar, o total deu 320, dividimos em 3'),
+        (
+          'Dividir conta do jantar',
+          'Fui em um jantar, o total deu 320, dividimos em 3'
+        ),
         ('Dividir transporte / Uber', 'Rachei o Uber de 45 com um amigo'),
-        ('Empréstimo (5º dia útil)', 'Emprestei 150 pro João, ele disse que ia pagar quando recebesse'),
+        (
+          'Empréstimo (5º dia útil)',
+          'Emprestei 150 pro João, ele disse que ia pagar quando recebesse'
+        ),
         ('Receber dívida total', 'O João me pagou tudo'),
         ('Receber parte da dívida', 'A Maria me acertou 50 reais'),
       ],
@@ -153,7 +162,10 @@ class _ChatScreenState extends State<ChatScreen> {
         ('Boletos da semana', 'Quais boletos vencem essa semana?'),
         ('Maior gasto do mês', 'Qual foi meu maior gasto este mês?'),
         ('Saldo disponível', 'Quanto ainda posso gastar este mês?'),
-        ('Quem está me devendo', 'Quem está me devendo e quanto falta receber?'),
+        (
+          'Quem está me devendo',
+          'Quem está me devendo e quanto falta receber?'
+        ),
       ],
     ),
     (
@@ -213,7 +225,9 @@ class _ChatScreenState extends State<ChatScreen> {
       final draftKey = _drafts.startDraft();
       _saveCompletedDraft(completedDraft);
       _drafts.saved(_lastSavedTransactionIds);
-      final amountStr = completedDraft.amount != null ? Money.brl(completedDraft.amount!) : '';
+      final amountStr = completedDraft.amount != null
+          ? Money.brl(completedDraft.amount!)
+          : '';
       final itemOrPlace = (completedDraft.description.isNotEmpty &&
               completedDraft.description != 'unknown' &&
               completedDraft.description != 'expense_other')
@@ -279,7 +293,10 @@ class _ChatScreenState extends State<ChatScreen> {
   /// "…?voz=1" opens the voice conversation.
   void _onLink() {
     final link = KrezioRoutes.pendingLink.value;
-    if (!mounted || link == null || KrezioRoutes.tabFor(link.path) != KrezioRoutes.tabs.indexOf(KrezioRoutes.chat)) return;
+    if (!mounted ||
+        link == null ||
+        KrezioRoutes.tabFor(link.path) !=
+            KrezioRoutes.tabs.indexOf(KrezioRoutes.chat)) return;
     final phrase = KrezioRoutes.phraseIn(link);
     final voice = KrezioRoutes.wantsVoice(link);
     if (phrase == null && !voice) return;
@@ -317,10 +334,13 @@ class _ChatScreenState extends State<ChatScreen> {
         title: draft.description,
         personName: draft.personName,
         amount: draft.amount,
-        targetDate: draft.targetDate ?? DateTime.now().add(const Duration(days: 30)),
+        targetDate:
+            draft.targetDate ?? DateTime.now().add(const Duration(days: 30)),
         type: draft.reminderType == 'loan_receivable'
             ? ReminderType.loanReceivable
-            : (draft.reminderType == 'dividend' ? ReminderType.dividend : ReminderType.general),
+            : (draft.reminderType == 'dividend'
+                ? ReminderType.dividend
+                : ReminderType.general),
         notes: draft.calendarConsultationNote,
       );
       widget.repository!.addReminder(reminder);
@@ -330,7 +350,9 @@ class _ChatScreenState extends State<ChatScreen> {
         dateTime: reminder.targetDate,
         category: draft.reminderType == 'loan_receivable'
             ? CalendarEventCategory.loanReceivable
-            : (draft.reminderType == 'dividend' ? CalendarEventCategory.dividend : CalendarEventCategory.personalReminder),
+            : (draft.reminderType == 'dividend'
+                ? CalendarEventCategory.dividend
+                : CalendarEventCategory.personalReminder),
         amount: reminder.amount,
         personName: reminder.personName,
         notes: reminder.notes,
@@ -376,8 +398,13 @@ class _ChatScreenState extends State<ChatScreen> {
         stt.LocaleName? ptAny;
         for (final loc in locales) {
           final id = loc.localeId.replaceAll('_', '-').toLowerCase();
-          if (id == 'pt-br') { ptBR = loc; break; }
-          if (id.startsWith('pt') && ptAny == null) { ptAny = loc; }
+          if (id == 'pt-br') {
+            ptBR = loc;
+            break;
+          }
+          if (id.startsWith('pt') && ptAny == null) {
+            ptAny = loc;
+          }
         }
         final best = ptBR ?? ptAny;
         if (best != null) {
@@ -467,7 +494,8 @@ class _ChatScreenState extends State<ChatScreen> {
       ChatMessage(
         id: 'welcome',
         sender: MessageSender.assistant,
-        text: 'Olá${_assistant?.userName != null ? ', ${_assistant!.userName}' : ''}! Eu sou o César, seu copiloto financeiro no Krezio.ai, e interpreto comandos no seu aparelho. Como posso te ajudar com suas finanças hoje?\n\nDigite um gasto, receita, agende um lembrete, cole notificações de banco ou me pergunte o que quiser!',
+        text:
+            'Olá${_assistant?.userName != null ? ', ${_assistant!.userName}' : ''}! Eu sou o César, seu copiloto financeiro no Krezio.ai, e interpreto comandos no seu aparelho. Como posso te ajudar com suas finanças hoje?\n\nDigite um gasto, receita, agende um lembrete, cole notificações de banco ou me pergunte o que quiser!',
         timestamp: DateTime.now(),
       ),
     );
@@ -526,10 +554,13 @@ class _ChatScreenState extends State<ChatScreen> {
 
     // 0. "cancela" / "esquece" while César is still asking about a draft —
     // drop it instead of merging the words into it and asking again.
-    if (_activeDraft != null && !_activeDraft!.isComplete && widget.engine.isCancelCommand(text, pending: _activeDraft)) {
+    if (_activeDraft != null &&
+        !_activeDraft!.isComplete &&
+        widget.engine.isCancelCommand(text, pending: _activeDraft)) {
       _activeDraft = null;
       _drafts.dropped();
-      _replyAsAssistant('Tudo bem, descartei esse lançamento. Nada foi registrado. 👍');
+      _replyAsAssistant(
+          'Tudo bem, descartei esse lançamento. Nada foi registrado. 👍');
       return;
     }
 
@@ -537,9 +568,12 @@ class _ChatScreenState extends State<ChatScreen> {
     // Pix?"). A brand-new sentence drops the batch and is handled normally.
     if (_pendingBatch != null) {
       final batch = _pendingBatch!;
-      if (widget.engine.isCancelCommand(text, pending: batch.firstWhere((d) => !d.isComplete, orElse: () => batch.first))) {
+      if (widget.engine.isCancelCommand(text,
+          pending: batch.firstWhere((d) => !d.isComplete,
+              orElse: () => batch.first))) {
         _pendingBatch = null;
-        _replyAsAssistant('Tudo bem, descartei esses lançamentos. Nada foi registrado. 👍');
+        _replyAsAssistant(
+            'Tudo bem, descartei esses lançamentos. Nada foi registrado. 👍');
         return;
       }
       // "e se fosse no pix?" asks about the batch — answer it and keep the
@@ -549,7 +583,8 @@ class _ChatScreenState extends State<ChatScreen> {
         _showAssistantReply(whatIf, speak: true);
         return;
       }
-      final firstOpen = batch.firstWhere((d) => !d.isComplete, orElse: () => batch.first);
+      final firstOpen =
+          batch.firstWhere((d) => !d.isComplete, orElse: () => batch.first);
       if (!widget.engine.startsNewTransaction(firstOpen, text)) {
         final merged = widget.engine.mergeMultiDrafts(batch, text);
         final prompt = widget.engine.multiClarificationPrompt(merged);
@@ -570,7 +605,8 @@ class _ChatScreenState extends State<ChatScreen> {
     // answers to César's own pending questions (confirm a delete, pick one).
     final assistant = _assistant;
     if (assistant != null) {
-      final reply = assistant.handleCommand(text, hasPendingDraft: _activeDraft != null && !_activeDraft!.isComplete);
+      final reply = assistant.handleCommand(text,
+          hasPendingDraft: _activeDraft != null && !_activeDraft!.isComplete);
       if (reply != null && reply.rewrittenInput != null) {
         // "e 30 na padaria" → "gastei 30 na padaria no pix": continue as a new entry.
         text = reply.rewrittenInput!;
@@ -587,7 +623,8 @@ class _ChatScreenState extends State<ChatScreen> {
     final isCorrectionIntent = _lastCompletedDraft != null &&
         (_activeDraft == null || _activeDraft!.isComplete) &&
         _lastCompletedDraft!.isRecurrent &&
-        RegExp(r'dia\s+[uú]til|\b(?:todo|vence(?:\s+no)?|cai(?:\s+no)?)\s+dia\s+\d').hasMatch(lower) &&
+        RegExp(r'dia\s+[uú]til|\b(?:todo|vence(?:\s+no)?|cai(?:\s+no)?)\s+dia\s+\d')
+            .hasMatch(lower) &&
         !RegExp(r'\d+(?:[.,]\d+)?\s*(?:reais|real)|r\$').hasMatch(lower);
 
     if (isCorrectionIntent) {
@@ -599,15 +636,22 @@ class _ChatScreenState extends State<ChatScreen> {
       // The engine only recognizes Krezio's built-in category names. If it
       // didn't change anything, see if the user instead named one of *their*
       // custom categories (e.g. "na verdade é pets").
-      if (!updated.isCanceled && updated.category == previousDraft.category && widget.repository != null) {
+      if (!updated.isCanceled &&
+          updated.category == previousDraft.category &&
+          widget.repository != null) {
         final spokenName = _extractSpokenCategoryName(text);
-        final customCode = (spokenName != null ? widget.repository!.findCustomCategoryCode(spokenName) : null) ??
+        final customCode = (spokenName != null
+                ? widget.repository!.findCustomCategoryCode(spokenName)
+                : null) ??
             widget.engine.matchCustomCategory(text);
         if (customCode != null && customCode != updated.category) {
-          final categoryName = widget.repository!.budgets.firstWhere((b) => b.category == customCode).name;
+          final categoryName = widget.repository!.budgets
+              .firstWhere((b) => b.category == customCode)
+              .name;
           updated = updated.copyWith(
             category: customCode,
-            clarificationPrompt: 'Pronto! Movi esse lançamento para a categoria $categoryName. ✨',
+            clarificationPrompt:
+                'Pronto! Movi esse lançamento para a categoria $categoryName. ✨',
           );
           _lastCompletedDraft = updated;
         }
@@ -616,11 +660,19 @@ class _ChatScreenState extends State<ChatScreen> {
       // Apply the correction to the saved record itself (or delete it on
       // "cancela") — otherwise only the chat card changed.
       if (widget.repository != null) {
-        final before = widget.repository!.transactions.where((t) => _lastSavedTransactionIds.contains(t.id)).toList();
-        final learnsCategory = !updated.isCanceled && updated.category != previousDraft.category;
+        final before = widget.repository!.transactions
+            .where((t) => _lastSavedTransactionIds.contains(t.id))
+            .toList();
+        final learnsCategory =
+            !updated.isCanceled && updated.category != previousDraft.category;
         if (!updated.isCanceled) {
           _assistant?.recordExternalEdit(before,
-              learned: learnsCategory ? {updated.description: widget.repository!.recallCategoryOverride(updated.description)} : const {});
+              learned: learnsCategory
+                  ? {
+                      updated.description: widget.repository!
+                          .recallCategoryOverride(updated.description)
+                    }
+                  : const {});
         }
         for (final savedId in _lastSavedTransactionIds) {
           if (updated.isCanceled) {
@@ -636,13 +688,15 @@ class _ChatScreenState extends State<ChatScreen> {
       // remember it (persisted) so future transactions described the same way
       // are categorized correctly right away — no need to correct twice.
       if (!updated.isCanceled && updated.category != previousDraft.category) {
-        widget.repository?.rememberCategoryOverride(updated.description, updated.category);
+        widget.repository
+            ?.rememberCategoryOverride(updated.description, updated.category);
       }
 
       final assistantMsg = ChatMessage(
         id: (DateTime.now().millisecondsSinceEpoch + 1).toString(),
         sender: MessageSender.assistant,
-        text: updated.clarificationPrompt ?? 'Lançamento atualizado com sucesso! ✨',
+        text: updated.clarificationPrompt ??
+            'Lançamento atualizado com sucesso! ✨',
         timestamp: DateTime.now(),
         draft: updated.isCanceled ? null : updated,
         isMergedUpdate: true,
@@ -664,7 +718,8 @@ class _ChatScreenState extends State<ChatScreen> {
     // entry instead of ending the conversation with nothing recorded.
     String? preface;
     if (widget.repository != null) {
-      final resolved = DebtPaymentParser.resolveForRepository(text, widget.repository!);
+      final resolved =
+          DebtPaymentParser.resolveForRepository(text, widget.repository!);
       final debtPayment = resolved?.match;
       final List<FinancialReminder> matches = resolved?.matches ?? const [];
       if (debtPayment != null && matches.isEmpty) {
@@ -673,10 +728,12 @@ class _ChatScreenState extends State<ChatScreen> {
         String responseText;
 
         if (matches.length > 1) {
-          responseText = 'Encontrei mais de uma cobrança pendente no nome de ${debtPayment.personName}. '
+          responseText =
+              'Encontrei mais de uma cobrança pendente no nome de ${debtPayment.personName}. '
               'Pode me dizer o valor original da dívida para eu identificar qual é?';
         } else {
-          final result = widget.repository!.applyDebtPayment(matches.first.id, debtPayment.amountPaid);
+          final result = widget.repository!
+              .applyDebtPayment(matches.first.id, debtPayment.amountPaid);
           responseText = DebtPaymentParser.paymentReply(
             debtPayment.personName,
             paid: result.amountPaid,
@@ -720,10 +777,12 @@ class _ChatScreenState extends State<ChatScreen> {
         widget.repository!.addGoal(goal);
 
         final targetStr = '${Money.brl(goalCreation.targetAmount)}';
-        var responseText = 'Meta criada! Vou te ajudar a juntar $targetStr para "${goalCreation.title}".';
+        var responseText =
+            'Meta criada! Vou te ajudar a juntar $targetStr para "${goalCreation.title}".';
         final monthly = goal.suggestedMonthlyContribution;
         if (monthly != null) {
-          responseText += ' Guardando ${Money.brl(monthly)} por mês você chega lá a tempo. 🎯';
+          responseText +=
+              ' Guardando ${Money.brl(monthly)} por mês você chega lá a tempo. 🎯';
         } else {
           responseText += ' Quando quiser, é só me dizer quanto guardou. 🎯';
         }
@@ -745,22 +804,28 @@ class _ChatScreenState extends State<ChatScreen> {
 
       final goalContribution = GoalParser.parseContribution(text);
       if (goalContribution != null) {
-        final matches = widget.repository!.findGoalsByTitle(goalContribution.goalTitle);
+        final matches =
+            widget.repository!.findGoalsByTitle(goalContribution.goalTitle);
         String responseText;
 
         if (matches.isEmpty) {
-          responseText = 'Não encontrei nenhuma meta chamada "${goalContribution.goalTitle}". Quer criar uma nova meta com esse valor?';
+          responseText =
+              'Não encontrei nenhuma meta chamada "${goalContribution.goalTitle}". Quer criar uma nova meta com esse valor?';
         } else if (matches.length > 1) {
-          responseText = 'Encontrei mais de uma meta parecida com "${goalContribution.goalTitle}". Pode ser mais específico?';
+          responseText =
+              'Encontrei mais de uma meta parecida com "${goalContribution.goalTitle}". Pode ser mais específico?';
         } else {
-          final updated = widget.repository!.contributeToGoal(matches.first.id, goalContribution.amount);
+          final updated = widget.repository!
+              .contributeToGoal(matches.first.id, goalContribution.amount);
           final savedStr = '${Money.brl(updated.savedAmount)}';
           final targetStr = '${Money.brl(updated.targetAmount)}';
           if (updated.isCompleted) {
-            responseText = 'Parabéns! 🎉 Você bateu a meta "${updated.title}": $savedStr guardados!';
+            responseText =
+                'Parabéns! 🎉 Você bateu a meta "${updated.title}": $savedStr guardados!';
           } else {
             final percent = (updated.progress * 100).toStringAsFixed(0);
-            responseText = 'Anotado! "${updated.title}" já tem $savedStr de $targetStr guardados ($percent%).';
+            responseText =
+                'Anotado! "${updated.title}" já tem $savedStr de $targetStr guardados ($percent%).';
           }
         }
 
@@ -782,7 +847,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
     // 4. Check for Affordability Questions ("posso comprar um notebook de 3000?")
     if (widget.repository != null) {
-      final affordability = AffordabilityAnalyzer(repository: widget.repository!).analyze(text);
+      final affordability =
+          AffordabilityAnalyzer(repository: widget.repository!).analyze(text);
       if (affordability != null) {
         final assistantMsg = ChatMessage(
           id: (DateTime.now().millisecondsSinceEpoch + 1).toString(),
@@ -804,13 +870,16 @@ class _ChatScreenState extends State<ChatScreen> {
     // 5. Questions about the data ("qual meu maior gasto?", "tô no
     // vermelho?", "quanto gastei com mercado?" ⏎ "e no mês passado?").
     if (assistant != null) {
-      final answer = assistant.handleQuestion(text, hasPendingDraft: _activeDraft != null && !_activeDraft!.isComplete);
+      final answer = assistant.handleQuestion(text,
+          hasPendingDraft: _activeDraft != null && !_activeDraft!.isComplete);
       if (answer != null) {
         _showAssistantReply(answer, speak: true);
         return;
       }
-    } else if (widget.repository != null && FinancialReportRagEngine.isReportQuery(text)) {
-      final ragEngine = FinancialReportRagEngine(repository: widget.repository!);
+    } else if (widget.repository != null &&
+        FinancialReportRagEngine.isReportQuery(text)) {
+      final ragEngine =
+          FinancialReportRagEngine(repository: widget.repository!);
       final reportResult = ragEngine.generateReport(text, history: _messages);
 
       final assistantMsg = ChatMessage(
@@ -841,10 +910,13 @@ class _ChatScreenState extends State<ChatScreen> {
     // "gastei 47 no açougue e mais 23 na padaria"): it replaces the draft,
     // and César says so (CHAOS-B-007).
     final draftPending = _activeDraft != null && !_activeDraft!.isComplete;
-    if (!draftPending || widget.engine.startsNewTransaction(_activeDraft!, text)) {
+    if (!draftPending ||
+        widget.engine.startsNewTransaction(_activeDraft!, text)) {
       final multiDrafts = widget.engine.parseMulti(text);
       if (multiDrafts.length >= 2) {
-        final dropped = draftPending ? LocalFinancialNlpEngine.discardedDraftNotice(_activeDraft!) : null;
+        final dropped = draftPending
+            ? LocalFinancialNlpEngine.discardedDraftNotice(_activeDraft!)
+            : null;
         _activeDraft = null;
         _drafts.dropped();
         // Items with something missing (no payment method said) are asked
@@ -868,13 +940,16 @@ class _ChatScreenState extends State<ChatScreen> {
     // A full new sentence ("comprei uma blusa de 500 no pix") while a draft
     // is pending starts a new transaction instead of being merged into the
     // old one (which saved it with the old draft's type and description).
-    if (_activeDraft != null && !_activeDraft!.isComplete && !widget.engine.startsNewTransaction(_activeDraft!, text)) {
+    if (_activeDraft != null &&
+        !_activeDraft!.isComplete &&
+        !widget.engine.startsNewTransaction(_activeDraft!, text)) {
       draft = widget.engine.mergeDrafts(_activeDraft!, text);
       isMerged = true;
     } else {
       // Say so when this drops a draft César was still asking about.
       if (_activeDraft != null && !_activeDraft!.isComplete) {
-        discardedNotice = LocalFinancialNlpEngine.discardedDraftNotice(_activeDraft!);
+        discardedNotice =
+            LocalFinancialNlpEngine.discardedDraftNotice(_activeDraft!);
       }
       draft = widget.engine.parse(text);
     }
@@ -886,7 +961,8 @@ class _ChatScreenState extends State<ChatScreen> {
       draft = widget.repository!.applyCategoryMemory(draft);
     }
 
-    String responseText = draft.clarificationPrompt ?? 'Lançamento registrado com sucesso! 🎉';
+    String responseText =
+        draft.clarificationPrompt ?? 'Lançamento registrado com sucesso! 🎉';
 
     // A question ("qual meu saldo?") is "complete" too, but it is not a
     // record: saving it or making it the last transaction meant "apaga o
@@ -903,10 +979,13 @@ class _ChatScreenState extends State<ChatScreen> {
           title: draft.description,
           personName: draft.personName,
           amount: draft.amount,
-          targetDate: draft.targetDate ?? DateTime.now().add(const Duration(days: 30)),
+          targetDate:
+              draft.targetDate ?? DateTime.now().add(const Duration(days: 30)),
           type: draft.reminderType == 'loan_receivable'
               ? ReminderType.loanReceivable
-              : (draft.reminderType == 'dividend' ? ReminderType.dividend : ReminderType.general),
+              : (draft.reminderType == 'dividend'
+                  ? ReminderType.dividend
+                  : ReminderType.general),
           notes: draft.calendarConsultationNote,
         );
         widget.repository!.addReminder(reminder);
@@ -916,7 +995,9 @@ class _ChatScreenState extends State<ChatScreen> {
           dateTime: reminder.targetDate,
           category: draft.reminderType == 'loan_receivable'
               ? CalendarEventCategory.loanReceivable
-              : (draft.reminderType == 'dividend' ? CalendarEventCategory.dividend : CalendarEventCategory.personalReminder),
+              : (draft.reminderType == 'dividend'
+                  ? CalendarEventCategory.dividend
+                  : CalendarEventCategory.personalReminder),
           amount: reminder.amount,
           personName: reminder.personName,
           notes: reminder.notes,
@@ -924,53 +1005,76 @@ class _ChatScreenState extends State<ChatScreen> {
       }
 
       final amountStr = draft.amount != null ? Money.brl(draft.amount!) : '';
-      final itemOrPlace = (draft.description.isNotEmpty && draft.description != 'unknown' && draft.description != 'expense_other')
+      final itemOrPlace = (draft.description.isNotEmpty &&
+              draft.description != 'unknown' &&
+              draft.description != 'expense_other')
           ? ' com ${draft.description}'
           : '';
 
-      final bankTag = draft.bankSource != null ? ' via ${draft.bankSource}' : '';
-      final recurrentTag = draft.isRecurrent ? ' (Recorrente ${_dueRuleLabel(draft)})' : '';
+      final bankTag =
+          draft.bankSource != null ? ' via ${draft.bankSource}' : '';
+      final recurrentTag =
+          draft.isRecurrent ? ' (Recorrente ${_dueRuleLabel(draft)})' : '';
 
       if (draft.billingDay != null && draft.paymentMarginDays != null) {
-        responseText = 'Pronto! Boleto de ${draft.description} registrado: cai todo dia ${draft.billingDay} e vence no dia ${draft.dueDay ?? 5} (margem de ${draft.paymentMarginDays} dias para pagar). 📄';
+        responseText =
+            'Pronto! Boleto de ${draft.description} registrado: cai todo dia ${draft.billingDay} e vence no dia ${draft.dueDay ?? 5} (margem de ${draft.paymentMarginDays} dias para pagar). 📄';
       } else if (draft.isReminder && draft.reminderType == 'loan_receivable') {
         responseText = LocalFinancialNlpEngine.loanReminderText(
           personName: draft.personName,
           targetDate: draft.targetDate,
           amount: draft.amount,
-          fromSalaryAnalogy: draft.calendarConsultationNote?.contains('5º dia útil') ?? false,
+          fromSalaryAnalogy:
+              draft.calendarConsultationNote?.contains('5º dia útil') ?? false,
         );
       } else if (draft.isReminder && draft.reminderType == 'dividend') {
         final dateLabel = draft.targetDate != null
             ? RealtimeCalendarService.formatDateLabel(draft.targetDate!)
             : 'no dia ${draft.dueDay ?? 15}';
-        responseText = 'Pronto! Agendei um lembrete para você receber seus ${draft.description} no dia $dateLabel! 📈';
+        responseText =
+            'Pronto! Agendei um lembrete para você receber seus ${draft.description} no dia $dateLabel! 📈';
       } else if (draft.intent == 'income') {
         if (draft.isRecurrent && draft.dueDay != null) {
-          responseText = 'Pronto! Programei o recebimento recorrente de $amountStr$itemOrPlace ${_dueRuleLabel(draft)} no seu planejamento. ✨';
+          responseText =
+              'Pronto! Programei o recebimento recorrente de $amountStr$itemOrPlace ${_dueRuleLabel(draft)} no seu planejamento. ✨';
         } else {
-          responseText = 'Pronto! Receita de $amountStr$itemOrPlace$bankTag adicionada ao seu saldo. ✨';
+          responseText =
+              'Pronto! Receita de $amountStr$itemOrPlace$bankTag adicionada ao seu saldo. ✨';
         }
       } else if ((draft.repeatDays ?? 1) > 1 && draft.amount != null) {
         final days = draft.repeatDays!;
         final start = DateTime.now().add(Duration(days: draft.dateOffsetDays));
         final end = start.add(Duration(days: days - 1));
-        String fmt(DateTime d) => '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}';
-        final payName = draft.paymentMethod != 'unknown' ? ' no ${_formatPayment(draft.paymentMethod, null)}' : '';
-        responseText = 'Pronto! Registrei $days diárias de $amountStr$itemOrPlace$payName, uma por dia de ${fmt(start)} a ${fmt(end)}. 🎉';
+        String fmt(DateTime d) =>
+            '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}';
+        final payName = draft.paymentMethod != 'unknown'
+            ? ' no ${_formatPayment(draft.paymentMethod, null)}'
+            : '';
+        responseText =
+            'Pronto! Registrei $days diárias de $amountStr$itemOrPlace$payName, uma por dia de ${fmt(start)} a ${fmt(end)}. 🎉';
       } else if (draft.intent == 'transfer') {
-        responseText = 'Pronto! Transferência de $amountStr$itemOrPlace$bankTag registrada com sucesso. 💸';
-      } else if (draft.paymentMethod == 'credit_card' && draft.installments != null && draft.installments! > 1 && draft.amount != null) {
-        final perInst = Money.brl(draft.installmentValue ?? draft.amount! / draft.installments!);
+        responseText =
+            'Pronto! Transferência de $amountStr$itemOrPlace$bankTag registrada com sucesso. 💸';
+      } else if (draft.paymentMethod == 'credit_card' &&
+          draft.installments != null &&
+          draft.installments! > 1 &&
+          draft.amount != null) {
+        final perInst = Money.brl(
+            draft.installmentValue ?? draft.amount! / draft.installments!);
         // "todo dia 10" with installments is when each installment is due —
         // not a monthly charge of the whole price.
-        final dueTag = draft.installmentDueDay != null ? ', com vencimento todo dia ${draft.installmentDueDay}' : '';
-        responseText = 'Pronto! Registrei $amountStr$itemOrPlace no crédito em ${draft.installments}x de $perInst$dueTag$recurrentTag. 🎉';
+        final dueTag = draft.installmentDueDay != null
+            ? ', com vencimento todo dia ${draft.installmentDueDay}'
+            : '';
+        responseText =
+            'Pronto! Registrei $amountStr$itemOrPlace no crédito em ${draft.installments}x de $perInst$dueTag$recurrentTag. 🎉';
       } else if (draft.paymentMethod != 'unknown') {
         final payName = _formatPayment(draft.paymentMethod, draft.installments);
-        responseText = 'Pronto! Despesa de $amountStr$itemOrPlace no $payName$bankTag$recurrentTag registrada com sucesso. 🎉';
+        responseText =
+            'Pronto! Despesa de $amountStr$itemOrPlace no $payName$bankTag$recurrentTag registrada com sucesso. 🎉';
       } else {
-        responseText = 'Pronto! Lançamento de $amountStr$itemOrPlace registrado com sucesso. 🎉';
+        responseText =
+            'Pronto! Lançamento de $amountStr$itemOrPlace registrado com sucesso. 🎉';
       }
 
       if (draft.budgetInsight != null) {
@@ -993,13 +1097,15 @@ class _ChatScreenState extends State<ChatScreen> {
       _activeDraft = null;
       _drafts.dropped();
     } else if (draft.intent == 'unknown' && !isMerged) {
-      responseText = draft.clarificationPrompt ?? 'Como posso te ajudar com suas finanças hoje?';
+      responseText = draft.clarificationPrompt ??
+          'Como posso te ajudar com suas finanças hoje?';
       _activeDraft = null;
       _drafts.dropped();
     }
 
     if (preface != null) responseText = '$preface\n\n$responseText';
-    if (discardedNotice != null) responseText = '$discardedNotice\n\n$responseText';
+    if (discardedNotice != null)
+      responseText = '$discardedNotice\n\n$responseText';
     final notice = _assistant?.takeNotice();
     if (notice != null) responseText = '$notice\n\n$responseText';
 
@@ -1034,12 +1140,16 @@ class _ChatScreenState extends State<ChatScreen> {
     if (speak) _voiceSynthesis.speak(text);
     FinancialTransactionDraft? cardDraft;
     List<String> cardIds = const [];
-    if (reply.route == 'split' && reply.changedIds.isNotEmpty && widget.repository != null) {
+    if (reply.route == 'split' &&
+        reply.changedIds.isNotEmpty &&
+        widget.repository != null) {
       final txId = reply.changedIds.first;
-      final tx = widget.repository!.transactions.cast<FinancialTransaction?>().firstWhere(
-        (t) => t?.id == txId,
-        orElse: () => null,
-      );
+      final tx = widget.repository!.transactions
+          .cast<FinancialTransaction?>()
+          .firstWhere(
+            (t) => t?.id == txId,
+            orElse: () => null,
+          );
       if (tx != null) {
         final today = DateTime.now();
         final todayOnly = DateTime(today.year, today.month, today.day);
@@ -1088,8 +1198,11 @@ class _ChatScreenState extends State<ChatScreen> {
       return;
     }
     final repo = widget.repository;
-    if (repo == null || _lastCompletedDraft == null || !_lastSavedTransactionIds.any(reply.changedIds.contains)) return;
-    final matches = repo.transactions.where((t) => t.id == _lastSavedTransactionIds.first);
+    if (repo == null ||
+        _lastCompletedDraft == null ||
+        !_lastSavedTransactionIds.any(reply.changedIds.contains)) return;
+    final matches =
+        repo.transactions.where((t) => t.id == _lastSavedTransactionIds.first);
     if (matches.isEmpty) return;
     final tx = matches.first;
     _lastCompletedDraft = _lastCompletedDraft!.copyWith(
@@ -1098,14 +1211,17 @@ class _ChatScreenState extends State<ChatScreen> {
       paymentMethod: tx.paymentMethod,
       installments: tx.installments,
       description: tx.title,
-      intent: tx.type == TransactionType.income ? 'income' : (tx.type == TransactionType.transfer ? 'transfer' : 'expense'),
+      intent: tx.type == TransactionType.income
+          ? 'income'
+          : (tx.type == TransactionType.transfer ? 'transfer' : 'expense'),
     );
   }
 
   /// "todo 5º dia útil (próximo: 07/10)" or "todo dia 12".
   String _dueRuleLabel(FinancialTransactionDraft draft) {
     if (draft.dueBusinessDay != null) {
-      final next = RealtimeCalendarService.nextNthBusinessDay(draft.dueBusinessDay!);
+      final next =
+          RealtimeCalendarService.nextNthBusinessDay(draft.dueBusinessDay!);
       return 'todo ${draft.dueBusinessDay}º dia útil, próximo em ${next.day.toString().padLeft(2, '0')}/${next.month.toString().padLeft(2, '0')}';
     }
     return 'todo dia ${draft.dueDay ?? 10}';
@@ -1130,7 +1246,9 @@ class _ChatScreenState extends State<ChatScreen> {
       final d = drafts[i];
       final amt = d.amount != null ? Money.brl(d.amount!) : '';
       final pay = _formatPayment(d.paymentMethod, d.installments);
-      final code = idsPerDraft[i].isEmpty ? '' : ' ${TransactionCode.label(idsPerDraft[i].first)}';
+      final code = idsPerDraft[i].isEmpty
+          ? ''
+          : ' ${TransactionCode.label(idsPerDraft[i].first)}';
       buffer.writeln('${i + 1}. $amt com ${d.description} ($pay)$code');
     }
     buffer.write('\nTodos foram registrados com sucesso! 🎉');
@@ -1157,7 +1275,9 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   List<String> _saveDraft(FinancialTransactionDraft draft) =>
-      (widget.repository?.addTransactionFromDraft(draft) ?? const []).map((t) => t.id).toList();
+      (widget.repository?.addTransactionFromDraft(draft) ?? const [])
+          .map((t) => t.id)
+          .toList();
 
   void _replyAsAssistant(String text) {
     final assistantMsg = ChatMessage(
@@ -1199,499 +1319,452 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = widget.isDarkMode;
-    final bgSurface = isDark ? KrezioColors.darkSurface : KrezioColors.lightSurface;
+    final palette = KrezioPalette.of(context);
+    final showPrompts =
+        !_messages.any((msg) => msg.sender == MessageSender.user);
 
     return Scaffold(
       appBar: AppBar(
-        titleSpacing: 16,
+        toolbarHeight: 62,
+        titleSpacing: KrezioSpace.lg,
+        shape: Border(bottom: BorderSide(color: palette.border)),
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(KrezioSpace.sm),
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
-                color: KrezioColors.aiPurple.withOpacity(0.15),
+                color: palette.accent,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.auto_awesome,
-                color: KrezioColors.aiPurple,
-                size: 20,
-              ),
+              child:
+                  const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
             ),
             const SizedBox(width: KrezioSpace.md),
             Expanded(
               child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'César • Krezio.ai',
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: KrezioFont.title,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  'Seu Copiloto Financeiro On-Device',
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: KrezioFont.caption,
-                    color: isDark ? KrezioColors.darkSecondaryText : KrezioColors.lightSecondaryText,
-                  ),
-                ),
-              ],
-            ),
-            ),
-          ],
-        ),
-        actions: [
-          ValueListenableBuilder<AppEnvironment>(
-            valueListenable: EnvironmentConfig.environmentNotifier,
-            builder: (context, env, _) {
-              if (env != AppEnvironment.homologation) return const SizedBox.shrink();
-              return Padding(
-                padding: const EdgeInsets.only(right: KrezioSpace.sm),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => NeuralInspectorScreen(
-                          engine: widget.engine,
-                          initialQuery: _textController.text.isNotEmpty
-                              ? _textController.text
-                              : (_lastCompletedDraft?.rawText ?? _activeDraft?.rawText),
-                          isDark: widget.isDarkMode,
-                        ),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: KrezioSpace.sm, vertical: KrezioSpace.xs),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [KrezioColors.aiPurple, Color(0xFF6366F1)],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: KrezioColors.aiPurple.withOpacity(0.3),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.hub, color: Colors.white, size: 14),
-                        SizedBox(width: KrezioSpace.xs),
-                        Text(
-                          'XAI / NLP',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: KrezioFont.micro,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-          // Latency badge: only where there is room (not on a phone).
-          if (_lastLatencyMs > 0 && MediaQuery.sizeOf(context).width >= 480)
-            Container(
-              margin: const EdgeInsets.only(right: KrezioSpace.sm),
-              padding: const EdgeInsets.symmetric(horizontal: KrezioSpace.md, vertical: KrezioSpace.xs),
-              decoration: BoxDecoration(
-                color: KrezioColors.emeraldGreen.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: KrezioColors.emeraldGreen.withOpacity(0.3)),
-              ),
-              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.bolt, color: KrezioColors.emeraldGreen, size: 14),
-                  const SizedBox(width: KrezioSpace.xs),
                   Text(
-                    '${_lastLatencyMs.toStringAsFixed(1)} ms',
-                    style: const TextStyle(
-                      color: KrezioColors.emeraldGreen,
-                      fontSize: KrezioFont.caption,
-                      fontWeight: FontWeight.bold,
+                    'César',
+                    style: TextStyle(
+                      fontFamily: KrezioTheme.displayFamily,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 19,
+                      color: palette.primaryText,
                     ),
+                  ),
+                  Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color:
+                              _isListening ? palette.warning : palette.income,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          _isListening ? 'Ouvindo…' : 'Pronto para ajudar',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: KrezioFont.bodySmall,
+                            color: palette.secondaryText,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-          // Botão de Chamada de Voz com o César (100% On-Device)
-          Tooltip(
-            message: 'Conversar por voz com o César',
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: _openVoiceConversationModal,
-              child: Container(
-                margin: const EdgeInsets.only(right: KrezioSpace.sm),
-                padding: const EdgeInsets.symmetric(horizontal: KrezioSpace.sm, vertical: KrezioSpace.xs),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [KrezioColors.aiPurple, Color(0xFF6366F1)],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: KrezioColors.aiPurple.withOpacity(0.35),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.record_voice_over, color: Colors.white, size: 14),
-                    SizedBox(width: KrezioSpace.xs),
-                    Text(
-                      'VOZ',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: KrezioFont.micro,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+          ],
+        ),
+        actions: [
+          _chatOptions(palette),
+          Padding(
+            padding: const EdgeInsets.only(right: KrezioSpace.sm),
+            child: IconButton(
+              icon: const Icon(Icons.delete_outline_rounded),
+              onPressed: _clearChat,
+              tooltip: 'Limpar Chat',
             ),
-          ),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.language_rounded),
-            tooltip: 'Idioma da Voz',
-            onSelected: (localeId) {
-              final labels = {
-                'pt-BR': 'Português (Brasil)',
-                'en-US': 'English (United States)',
-                'es-ES': 'Español (España)',
-              };
-              _setVoiceLanguage(localeId, labels[localeId] ?? localeId);
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'pt-BR',
-                child: Row(
-                  children: [
-                    const Text('🇧🇷 '),
-                    const SizedBox(width: KrezioSpace.sm),
-                    Text('Português (Brasil)', style: TextStyle(fontWeight: _selectedLocaleId.contains('pt') ? FontWeight.bold : FontWeight.normal)),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'en-US',
-                child: Row(
-                  children: [
-                    const Text('🇺🇸 '),
-                    const SizedBox(width: KrezioSpace.sm),
-                    Text('English (US)', style: TextStyle(fontWeight: _selectedLocaleId.contains('en') ? FontWeight.bold : FontWeight.normal)),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'es-ES',
-                child: Row(
-                  children: [
-                    const Text('🇪🇸 '),
-                    const SizedBox(width: KrezioSpace.sm),
-                    Text('Español (España)', style: TextStyle(fontWeight: _selectedLocaleId.contains('es') ? FontWeight.bold : FontWeight.normal)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          // The theme switch lives in Ajustes → Aparência; on a phone there
-          // was no room left for the title.
-          if (MediaQuery.sizeOf(context).width >= 480)
-            IconButton(
-              icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
-              onPressed: widget.onToggleTheme,
-              tooltip: 'Alternar Tema',
-            ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            onPressed: _clearChat,
-            tooltip: 'Limpar Chat',
           ),
         ],
       ),
       body: SafeArea(
+        top: false,
         child: Column(
           children: [
-            // Quick Suggestions Bar (Quick Action + Categorized Dropdowns)
-            Container(
-              height: 50,
-              padding: const EdgeInsets.symmetric(vertical: KrezioSpace.sm),
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: KrezioSpace.lg),
-                scrollDirection: Axis.horizontal,
-                children: [
-                  ActionChip(
-                    avatar: const Icon(Icons.flash_on, size: 14, color: KrezioColors.aiPurple),
-                    label: const Text('Registrar gasto', style: TextStyle(fontSize: KrezioFont.small)),
-                    backgroundColor: bgSurface,
-                    side: BorderSide(
-                      color: isDark ? KrezioColors.darkBorder : KrezioColors.lightBorder,
+            Expanded(
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(KrezioSpace.lg),
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                itemCount: _messages.length,
+                itemBuilder: (context, index) {
+                  final msg = _messages[index];
+                  if (msg.id == 'welcome' && showPrompts) {
+                    return _welcomePrompts(palette);
+                  }
+                  return _buildMessageBubble(msg, palette);
+                },
+              ),
+            ),
+            _quickSuggestions(palette),
+            _activeVoiceControls(palette),
+            _composer(palette),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _chatOptions(KrezioPalette palette) {
+    final languages = {
+      'pt-BR': 'Português (Brasil)',
+      'en-US': 'English (United States)',
+      'es-ES': 'Español (España)',
+    };
+    return ValueListenableBuilder<AppEnvironment>(
+      valueListenable: EnvironmentConfig.environmentNotifier,
+      builder: (context, environment, _) {
+        final homologation = environment == AppEnvironment.homologation;
+        return PopupMenuButton<String>(
+          tooltip: 'Opções do César',
+          icon: const Icon(Icons.more_horiz_rounded),
+          onSelected: (value) {
+            switch (value) {
+              case 'voice':
+                _openVoiceConversationModal();
+              case 'dictation':
+                _toggleListening();
+              case 'theme':
+                widget.onToggleTheme();
+              case 'inspector':
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => NeuralInspectorScreen(
+                      engine: widget.engine,
+                      initialQuery: _textController.text.isNotEmpty
+                          ? _textController.text
+                          : (_lastCompletedDraft?.rawText ??
+                              _activeDraft?.rawText),
+                      isDark: widget.isDarkMode,
                     ),
-                    onPressed: () {
-                      const text = 'Gastei 45,90 no mercado no Pix';
-                      _textController.value = const TextEditingValue(
-                        text: text,
-                        selection: TextSelection.collapsed(offset: text.length),
-                      );
-                      _messageFocus.requestFocus();
-                    },
                   ),
-                  const SizedBox(width: KrezioSpace.sm),
-                  for (final (catTitle, catIcon, items) in _suggestionCategories) ...[
-                    PopupMenuButton<String>(
-                      tooltip: 'Sugestões: $catTitle',
-                      offset: const Offset(0, 38),
-                      color: bgSurface,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        side: BorderSide(
-                          color: isDark ? KrezioColors.darkBorder : KrezioColors.lightBorder,
+                );
+              default:
+                _setVoiceLanguage(value, languages[value]!);
+            }
+          },
+          itemBuilder: (_) => [
+            const PopupMenuItem(
+              value: 'voice',
+              child: Text('Conversar por voz com o César'),
+            ),
+            PopupMenuItem(
+              value: 'dictation',
+              child:
+                  Text(_isListening ? 'Parar de gravar' : 'Gravar minha fala'),
+            ),
+            const PopupMenuDivider(),
+            for (final entry in languages.entries)
+              CheckedPopupMenuItem(
+                value: entry.key,
+                checked:
+                    _selectedLocaleId.startsWith(entry.key.split('-').first),
+                child: Text(entry.value),
+              ),
+            const PopupMenuDivider(),
+            const PopupMenuItem(value: 'theme', child: Text('Alternar tema')),
+            if (homologation)
+              PopupMenuItem(
+                value: 'inspector',
+                child: Text(
+                  _lastLatencyMs > 0
+                      ? 'XAI / NLP · ${_lastLatencyMs.toStringAsFixed(1)} ms'
+                      : 'XAI / NLP',
+                  style: TextStyle(color: palette.accentText),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _fillComposer(String text) {
+    _textController.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+    _messageFocus.requestFocus();
+  }
+
+  Widget _welcomePrompts(KrezioPalette palette) {
+    final name = _assistant?.userName;
+    const examples = [
+      ('Registrar um gasto', 'Gastei 50 no mercado no Pix'),
+      ('Perguntar sobre o mês', 'Quanto eu gastei com mercado este mês?'),
+      ('Posso comprar?', 'Posso gastar 200 no restaurante hoje?'),
+      ('Corrigir ou apagar', 'Apaga o Uber de hoje'),
+    ];
+    return Padding(
+      padding:
+          const EdgeInsets.only(top: KrezioSpace.sm, bottom: KrezioSpace.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            name == null || name.isEmpty
+                ? 'Oi! Eu sou o César.'
+                : 'Oi, $name! Eu sou o César.',
+            style: const TextStyle(
+              fontFamily: KrezioTheme.displayFamily,
+              fontWeight: FontWeight.w700,
+              fontSize: 24,
+            ),
+          ),
+          const SizedBox(height: KrezioSpace.sm),
+          Text(
+            'Fale comigo como fala com um amigo. Posso registrar gastos, responder sobre seu mês e corrigir lançamentos.',
+            style: TextStyle(
+                color: palette.secondaryText, fontSize: 15, height: 1.45),
+          ),
+          const SizedBox(height: KrezioSpace.md),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final columns = constraints.maxWidth >= 280 &&
+                      MediaQuery.textScalerOf(context).scale(14) <= 19
+                  ? 2
+                  : 1;
+              final width =
+                  (constraints.maxWidth - KrezioSpace.sm * (columns - 1)) /
+                      columns;
+              return Wrap(
+                spacing: KrezioSpace.sm,
+                runSpacing: KrezioSpace.sm,
+                children: [
+                  for (final (title, text) in examples)
+                    SizedBox(
+                      width: width,
+                      child: Material(
+                        color: palette.surface,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          side: BorderSide(color: palette.border),
                         ),
-                      ),
-                      onSelected: (text) {
-                        _textController.value = TextEditingValue(
-                          text: text,
-                          selection: TextSelection.collapsed(offset: text.length),
-                        );
-                        _messageFocus.requestFocus();
-                      },
-                      itemBuilder: (_) => [
-                        for (final (label, text) in items)
-                          PopupMenuItem<String>(
-                            value: text,
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 270),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          onTap: () => _fillComposer(text),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(minHeight: 84),
+                            child: Padding(
+                              padding: const EdgeInsets.all(KrezioSpace.md),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
                                 children: [
+                                  Text(title,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w700)),
+                                  const SizedBox(height: KrezioSpace.xs),
                                   Text(
-                                    label,
+                                    text,
                                     style: TextStyle(
-                                      fontSize: KrezioFont.small,
-                                      fontWeight: FontWeight.w600,
-                                      color: isDark ? KrezioColors.darkPrimaryText : KrezioColors.lightPrimaryText,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '"$text"',
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: KrezioFont.caption,
-                                      color: isDark ? KrezioColors.darkSecondaryText : KrezioColors.lightSecondaryText,
+                                      color: palette.secondaryText,
+                                      fontSize: KrezioFont.bodySmall,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
                           ),
-                      ],
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: bgSurface,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: isDark ? KrezioColors.darkBorder : KrezioColors.lightBorder,
-                          ),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(catIcon, size: 14, color: KrezioColors.aiPurple),
-                            const SizedBox(width: 6),
-                            Text(
-                              catTitle,
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _quickSuggestions(KrezioPalette palette) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: KrezioSpace.lg),
+      child: Row(
+        children: [
+          ActionChip(
+            avatar:
+                Icon(Icons.bolt_rounded, size: 16, color: palette.accentText),
+            label: const Text('Registrar gasto'),
+            backgroundColor: palette.accentSoft,
+            side: BorderSide(color: palette.accentBorder),
+            shape: const StadiumBorder(),
+            onPressed: () => _fillComposer('Gastei 45,90 no mercado no Pix'),
+          ),
+          for (final (category, icon, items) in _suggestionCategories) ...[
+            const SizedBox(width: KrezioSpace.sm),
+            PopupMenuButton<String>(
+              tooltip: 'Sugestões: $category',
+              onSelected: _fillComposer,
+              itemBuilder: (_) => [
+                for (final (label, text) in items)
+                  PopupMenuItem<String>(
+                    value: text,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 256),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(label,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w700)),
+                          const SizedBox(height: KrezioSpace.xs),
+                          Text(text,
                               style: TextStyle(
-                                fontSize: KrezioFont.small,
-                                fontWeight: FontWeight.w500,
-                                color: isDark ? KrezioColors.darkPrimaryText : KrezioColors.lightPrimaryText,
-                              ),
-                            ),
-                            const SizedBox(width: 2),
-                            Icon(
-                              Icons.arrow_drop_down,
-                              size: 16,
-                              color: isDark ? KrezioColors.darkSecondaryText : KrezioColors.lightSecondaryText,
-                            ),
-                          ],
-                        ),
+                                  fontSize: KrezioFont.small,
+                                  color: palette.secondaryText)),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: KrezioSpace.sm),
-                  ],
-                ],
-              ),
-            ),
-            const Divider(height: 1, thickness: 1),
-
-            // Chat Messages List
-            Expanded(
-              child: ListView.builder(
-                controller: _scrollController,
-                padding: const EdgeInsets.all(KrezioSpace.lg),
-                itemCount: _messages.length,
-                itemBuilder: (context, index) {
-                  final msg = _messages[index];
-                  return _buildMessageBubble(msg, isDark);
-                },
-              ),
-            ),
-
-            // Active Voice / Recording Control Bar
-            ValueListenableBuilder<bool>(
-              valueListenable: _voiceSynthesis.isSpeakingNotifier,
-              builder: (context, isCesarSpeaking, _) {
-                if (!_isListening && !isCesarSpeaking) return const SizedBox.shrink();
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: KrezioSpace.lg, vertical: KrezioSpace.sm),
-                  decoration: BoxDecoration(
-                    color: isDark ? KrezioColors.darkSurface : KrezioColors.lightSurface,
-                    border: Border(
-                      top: BorderSide(color: isDark ? KrezioColors.darkBorder : KrezioColors.lightBorder),
-                    ),
                   ),
-                  child: Wrap(
-                    alignment: WrapAlignment.spaceBetween,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: KrezioSpace.sm,
-                    runSpacing: KrezioSpace.xs,
-                    children: [
-                      if (_isListening)
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.redAccent,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: KrezioSpace.md, vertical: KrezioSpace.xs),
-                          ),
-                          icon: const Icon(Icons.stop_circle_rounded, size: 16),
-                          label: const Text('Parar de gravar', style: TextStyle(fontSize: KrezioFont.small, fontWeight: FontWeight.bold)),
-                          onPressed: _toggleListening,
-                        ),
-                      if (isCesarSpeaking)
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.redAccent,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: KrezioSpace.md, vertical: KrezioSpace.xs),
-                          ),
-                          icon: const Icon(Icons.stop_circle_rounded, size: 16),
-                          label: const Text('Parar fala do César', style: TextStyle(fontSize: KrezioFont.small, fontWeight: FontWeight.bold)),
-                          onPressed: () => _voiceSynthesis.stop(),
-                        ),
-                    ],
-                  ),
-                );
-              },
-            ),
-
-            // Input Bar
-            Container(
-              padding: const EdgeInsets.all(KrezioSpace.md),
-              decoration: BoxDecoration(
-                color: bgSurface,
-                border: Border(
-                  top: BorderSide(
-                    color: isDark ? KrezioColors.darkBorder : KrezioColors.lightBorder,
-                  ),
+              ],
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 38),
+                padding: const EdgeInsets.symmetric(horizontal: KrezioSpace.md),
+                decoration: ShapeDecoration(
+                  color: palette.surface,
+                  shape: StadiumBorder(side: BorderSide(color: palette.border)),
                 ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _textController,
-                      focusNode: _messageFocus,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: _sendMessage,
-                      decoration: InputDecoration(
-                        hintText: 'Digite um gasto (ex: gastei 50 no mercado)...',
-                        hintStyle: TextStyle(
-                          fontSize: KrezioFont.body,
-                          color: isDark ? KrezioColors.darkSecondaryText : KrezioColors.lightSecondaryText,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: KrezioSpace.lg, vertical: KrezioSpace.md),
-                        filled: true,
-                        fillColor: isDark ? KrezioColors.darkBackground : KrezioColors.lightBackground,
-                        border: OutlineInputBorder(
-                          borderRadius: KrezioTheme.borderRadius,
-                          borderSide: BorderSide.none,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: KrezioTheme.borderRadius,
-                          borderSide: BorderSide(
-                            color: isDark ? KrezioColors.darkBorder : KrezioColors.lightBorder,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: KrezioTheme.borderRadius,
-                          borderSide: const BorderSide(color: KrezioColors.aiPurple, width: 1.5),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: KrezioSpace.sm),
-                  Tooltip(
-                    message: _isListening ? 'Parar de gravar' : 'Gravar minha fala',
-                    child: Material(
-                      color: _isListening ? Colors.redAccent : (isDark ? KrezioColors.darkSurface : KrezioColors.lightSurface),
-                      borderRadius: KrezioTheme.borderRadius,
-                      child: InkWell(
-                        borderRadius: KrezioTheme.borderRadius,
-                        onTap: _toggleListening,
-                        child: Padding(
-                          padding: const EdgeInsets.all(KrezioSpace.md),
-                          child: Icon(
-                            _isListening ? Icons.stop_rounded : Icons.mic_none_rounded,
-                            color: _isListening ? Colors.white : (isDark ? KrezioColors.darkPrimaryText : KrezioColors.lightPrimaryText),
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: KrezioSpace.sm),
-                  Material(
-                    color: KrezioColors.aiPurple,
-                    borderRadius: KrezioTheme.borderRadius,
-                    child: InkWell(
-                      borderRadius: KrezioTheme.borderRadius,
-                      onTap: () => _sendMessage(_textController.text),
-                      child: const Padding(
-                        padding: EdgeInsets.all(KrezioSpace.md),
-                        child: Icon(Icons.send_rounded, color: Colors.white, size: 20),
-                      ),
-                    ),
-                  ),
-                ],
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(icon, size: 14, color: palette.accentText),
+                    const SizedBox(width: 6),
+                    Text(category,
+                        style: const TextStyle(fontSize: KrezioFont.bodySmall)),
+                    const SizedBox(width: KrezioSpace.xs),
+                    Icon(Icons.expand_more_rounded,
+                        size: 16, color: palette.secondaryText),
+                  ],
+                ),
               ),
             ),
           ],
-        ),
+        ],
+      ),
+    );
+  }
+
+  Widget _activeVoiceControls(KrezioPalette palette) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: _voiceSynthesis.isSpeakingNotifier,
+      builder: (context, isCesarSpeaking, _) {
+        if (!_isListening && !isCesarSpeaking) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: KrezioSpace.lg),
+          child: Wrap(
+            alignment: WrapAlignment.center,
+            spacing: KrezioSpace.sm,
+            children: [
+              if (_isListening)
+                TextButton.icon(
+                  style:
+                      TextButton.styleFrom(foregroundColor: palette.attention),
+                  icon: const Icon(Icons.stop_circle_outlined, size: 18),
+                  label: const Text('Parar de gravar'),
+                  onPressed: _toggleListening,
+                ),
+              if (isCesarSpeaking)
+                TextButton.icon(
+                  style:
+                      TextButton.styleFrom(foregroundColor: palette.attention),
+                  icon: const Icon(Icons.stop_circle_outlined, size: 18),
+                  label: const Text('Parar fala do César'),
+                  onPressed: () => _voiceSynthesis.stop(),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _composer(KrezioPalette palette) {
+    final radius = BorderRadius.circular(24);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          KrezioSpace.lg, 6, KrezioSpace.lg, KrezioSpace.md),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _textController,
+              focusNode: _messageFocus,
+              textInputAction: TextInputAction.send,
+              onSubmitted: _sendMessage,
+              minLines: 1,
+              maxLines: 3,
+              style: const TextStyle(fontSize: 15, height: 1.4),
+              decoration: InputDecoration(
+                hintText: 'Mensagem para o César',
+                filled: true,
+                fillColor: palette.surface,
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: KrezioSpace.lg, vertical: KrezioSpace.md),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: radius,
+                  borderSide: BorderSide(color: palette.border),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: radius,
+                  borderSide: BorderSide(color: palette.accentBorder),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: KrezioSpace.sm),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: _textController,
+            builder: (context, value, _) {
+              final hasText = value.text.trim().isNotEmpty;
+              final canSend = hasText && !_isListening;
+              return IconButton.filled(
+                tooltip: canSend
+                    ? 'Enviar mensagem'
+                    : (_isListening ? 'Parar de gravar' : 'Gravar minha fala'),
+                style: IconButton.styleFrom(
+                  backgroundColor: palette.accent,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.square(48),
+                ),
+                icon: Icon(
+                  canSend
+                      ? Icons.arrow_upward_rounded
+                      : (_isListening
+                          ? Icons.stop_rounded
+                          : Icons.mic_none_rounded),
+                ),
+                onPressed:
+                    canSend ? () => _sendMessage(value.text) : _toggleListening,
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -1711,10 +1784,14 @@ class _ChatScreenState extends State<ChatScreen> {
 
       if (line.startsWith('#### ')) {
         children.add(Padding(
-          padding: const EdgeInsets.only(top: KrezioSpace.hair, bottom: KrezioSpace.xs),
+          padding: const EdgeInsets.only(
+              top: KrezioSpace.hair, bottom: KrezioSpace.xs),
           child: Text(
             line.substring(5),
-            style: TextStyle(fontSize: KrezioFont.body, fontWeight: FontWeight.w700, color: textColor),
+            style: TextStyle(
+                fontSize: KrezioFont.body,
+                fontWeight: FontWeight.w700,
+                color: textColor),
           ),
         ));
       } else if (line.startsWith('### ')) {
@@ -1722,7 +1799,10 @@ class _ChatScreenState extends State<ChatScreen> {
           padding: const EdgeInsets.only(bottom: KrezioSpace.sm),
           child: Text(
             line.substring(4),
-            style: TextStyle(fontSize: KrezioFont.bodyLarge, fontWeight: FontWeight.w700, color: textColor),
+            style: TextStyle(
+                fontSize: KrezioFont.bodyLarge,
+                fontWeight: FontWeight.w700,
+                color: textColor),
           ),
         ));
       } else if (line.startsWith('- ')) {
@@ -1731,7 +1811,12 @@ class _ChatScreenState extends State<ChatScreen> {
           child: RichText(
             text: TextSpan(
               children: [
-                TextSpan(text: '•  ', style: TextStyle(fontSize: KrezioFont.body, height: 1.4, color: textColor)),
+                TextSpan(
+                    text: '•  ',
+                    style: TextStyle(
+                        fontSize: KrezioFont.body,
+                        height: 1.4,
+                        color: textColor)),
                 ..._parseInlineMarkdown(line.substring(2), textColor),
               ],
             ),
@@ -1740,12 +1825,14 @@ class _ChatScreenState extends State<ChatScreen> {
       } else {
         children.add(Padding(
           padding: const EdgeInsets.only(bottom: KrezioSpace.xs),
-          child: RichText(text: TextSpan(children: _parseInlineMarkdown(line, textColor))),
+          child: RichText(
+              text: TextSpan(children: _parseInlineMarkdown(line, textColor))),
         ));
       }
     }
 
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: children);
+    return Column(
+        crossAxisAlignment: CrossAxisAlignment.start, children: children);
   }
 
   /// Parses inline "**bold**", "*italic*" and "`code`" spans within a single line.
@@ -1754,21 +1841,29 @@ class _ChatScreenState extends State<ChatScreen> {
   List<InlineSpan> _parseInlineMarkdown(String text, Color textColor) {
     final spans = <InlineSpan>[];
     final pattern = RegExp(r'\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`');
-    final baseStyle = TextStyle(fontSize: KrezioFont.body, height: 1.4, color: textColor);
+    final baseStyle =
+        TextStyle(fontSize: KrezioFont.body, height: 1.4, color: textColor);
     int last = 0;
 
     for (final match in pattern.allMatches(text)) {
       if (match.start > last) {
-        spans.add(TextSpan(text: text.substring(last, match.start), style: baseStyle));
+        spans.add(TextSpan(
+            text: text.substring(last, match.start), style: baseStyle));
       }
 
       final bold = match.group(1);
       final italic = match.group(2);
       final code = match.group(3);
       if (bold != null) {
-        spans.add(TextSpan(text: bold, style: baseStyle.copyWith(fontWeight: FontWeight.w700)));
+        spans.add(TextSpan(
+            text: bold,
+            style: baseStyle.copyWith(fontWeight: FontWeight.w700)));
       } else if (italic != null) {
-        spans.add(TextSpan(text: italic, style: baseStyle.copyWith(fontStyle: FontStyle.italic, color: textColor.withOpacity(0.75))));
+        spans.add(TextSpan(
+            text: italic,
+            style: baseStyle.copyWith(
+                fontStyle: FontStyle.italic,
+                color: textColor.withOpacity(0.75))));
       } else if (code != null) {
         spans.add(TextSpan(
           text: code,
@@ -1799,7 +1894,8 @@ class _ChatScreenState extends State<ChatScreen> {
     if (chart.categoryValues != null) {
       return SizedBox(
         width: 220,
-        child: CategoryDonutChart(categoryData: chart.categoryValues!, isDark: isDark),
+        child: CategoryDonutChart(
+            categoryData: chart.categoryValues!, isDark: isDark),
       );
     }
     if (chart.barValues != null) {
@@ -1811,155 +1907,124 @@ class _ChatScreenState extends State<ChatScreen> {
     return const SizedBox.shrink();
   }
 
-  Widget _buildMessageBubble(ChatMessage msg, bool isDark) {
+  Widget _buildMessageBubble(ChatMessage msg, KrezioPalette palette) {
     final isUser = msg.sender == MessageSender.user;
-    final isGreeting = !isUser && _messages.isNotEmpty && identical(msg, _messages.first);
-    final assistantSurface = isDark ? KrezioColors.darkSurface : KrezioColors.lightSurface;
-    // Aligns secondary elements (feedback, chips, receipt card) with the
-    // left edge of César's bubble: 32 px avatar + 8 px gap = 40 px.
-    const assistantIndent = KrezioSpace.xxxl + KrezioSpace.sm;
+    final isDark = palette.isDark;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: KrezioSpace.lg),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Column(
-        crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment:
+            isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (!isUser) ...[
-                Container(
-                  padding: const EdgeInsets.all(KrezioSpace.sm),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        KrezioColors.aiPurple.withValues(alpha: 0.24),
-                        KrezioColors.aiPurpleDark.withValues(alpha: 0.14),
-                      ],
-                    ),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: KrezioColors.aiPurple.withValues(alpha: 0.28),
-                    ),
+          FractionallySizedBox(
+            widthFactor: isUser ? 0.82 : 0.90,
+            alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+            child: Align(
+              alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isUser ? palette.accent : palette.surface,
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(18),
+                    topRight: const Radius.circular(18),
+                    bottomLeft: Radius.circular(isUser ? 18 : 5),
+                    bottomRight: Radius.circular(isUser ? 5 : 18),
                   ),
-                  child: const Icon(Icons.auto_awesome, color: KrezioColors.aiPurpleLight, size: 16),
+                  border: isUser ? null : Border.all(color: palette.border),
                 ),
-                const SizedBox(width: KrezioSpace.sm),
-              ],
-              Flexible(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 640),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: KrezioSpace.lg, vertical: KrezioSpace.md),
-                    decoration: BoxDecoration(
-                      color: isUser
-                          ? KrezioColors.aiPurple
-                          : isGreeting
-                              ? Color.alphaBlend(KrezioColors.aiPurple.withValues(alpha: 0.10), assistantSurface)
-                              : assistantSurface,
-                      borderRadius: BorderRadius.only(
-                        topLeft: const Radius.circular(16),
-                        topRight: const Radius.circular(16),
-                        bottomLeft: Radius.circular(isUser ? 16 : 4),
-                        bottomRight: Radius.circular(isUser ? 4 : 16),
+                child: isUser
+                    ? Text(
+                        msg.text,
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 15, height: 1.45),
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildFormattedMessage(msg.text, palette.primaryText),
+                          if (msg.chart != null) ...[
+                            const SizedBox(height: KrezioSpace.md),
+                            _buildReportChart(msg.chart!, isDark),
+                          ],
+                        ],
                       ),
-                      border: !isUser
-                          ? Border.all(
-                              color: isDark
-                                  ? KrezioColors.darkBorder.withValues(alpha: 0.75)
-                                  : KrezioColors.lightBorder,
-                            )
-                          : null,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.04),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: isUser
-                        ? Text(
-                            msg.text,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: KrezioFont.body,
-                              height: 1.4,
-                            ),
-                          )
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _buildFormattedMessage(
-                                msg.text,
-                                isDark ? KrezioColors.darkPrimaryText : KrezioColors.lightPrimaryText,
-                              ),
-                              if (msg.chart != null) ...[
-                                const SizedBox(height: KrezioSpace.md),
-                                _buildReportChart(msg.chart!, isDark),
-                              ],
-                            ],
-                          ),
-                  ),
-                ),
               ),
-              if (!isUser) ...[
-                const SizedBox(width: KrezioSpace.sm),
-                ValueListenableBuilder<VoiceAvailability>(
-                  valueListenable: _voiceSynthesis.availabilityNotifier,
-                  builder: (_, availability, child) => availability == VoiceAvailability.unavailable
-                    ? const SizedBox.shrink()
-                    : ValueListenableBuilder<bool>(
-                        valueListenable: _voiceSynthesis.isSpeakingNotifier,
-                        builder: (_, isSpeaking, __) => IconButton(
-                          icon: Icon(
-                            isSpeaking ? Icons.stop_circle_outlined : Icons.volume_up_outlined,
-                            size: 18,
-                          ),
-                          color: isSpeaking
-                              ? Colors.redAccent
-                              : (isDark ? KrezioColors.darkSecondaryText : KrezioColors.lightSecondaryText),
-                          tooltip: isSpeaking ? 'Parar fala do César' : 'Ouvir César falando',
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                          onPressed: () {
-                            if (isSpeaking) {
-                              _voiceSynthesis.stop();
-                            } else {
-                              _voiceSynthesis.speak(msg.text.isNotEmpty ? msg.text : (msg.spokenText ?? ''));
-                            }
-                          },
-                        ),
-                      ),
-                ),
-              ],
-            ],
+            ),
           ),
+          if (!isUser)
+            ValueListenableBuilder<VoiceAvailability>(
+              valueListenable: _voiceSynthesis.availabilityNotifier,
+              builder: (_, availability, _) =>
+                  availability == VoiceAvailability.unavailable
+                      ? const SizedBox.shrink()
+                      : ValueListenableBuilder<bool>(
+                          valueListenable: _voiceSynthesis.isSpeakingNotifier,
+                          builder: (_, isSpeaking, _) => IconButton(
+                            icon: Icon(
+                                isSpeaking
+                                    ? Icons.stop_circle_outlined
+                                    : Icons.volume_up_outlined,
+                                size: 18),
+                            color: isSpeaking
+                                ? palette.attention
+                                : palette.secondaryText,
+                            tooltip: isSpeaking
+                                ? 'Parar fala do César'
+                                : 'Ouvir César falando',
+                            onPressed: () {
+                              if (isSpeaking) {
+                                _voiceSynthesis.stop();
+                              } else {
+                                _voiceSynthesis.speak(msg.text.isNotEmpty
+                                    ? msg.text
+                                    : (msg.spokenText ?? ''));
+                              }
+                            },
+                          ),
+                        ),
+            ),
 
           // "Isso ajudou?" on César's answers (not on entry cards or the greeting).
-          if (!isUser && msg.draft == null && msg.id != 'welcome' && widget.repository != null)
+          if (!isUser &&
+              msg.draft == null &&
+              msg.id != 'welcome' &&
+              widget.repository != null)
             Padding(
-              padding: const EdgeInsets.only(left: assistantIndent, top: KrezioSpace.xs),
+              padding: const EdgeInsets.only(top: KrezioSpace.xs),
               child: _rated.containsKey(msg.id)
                   ? Text('Obrigado pelo retorno!',
-                      style: TextStyle(fontSize: KrezioFont.caption, color: isDark ? KrezioColors.darkSecondaryText : KrezioColors.lightSecondaryText))
+                      style: TextStyle(
+                          fontSize: KrezioFont.caption,
+                          color: isDark
+                              ? KrezioColors.darkSecondaryText
+                              : KrezioColors.lightSecondaryText))
                   : Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text('Isso ajudou?',
-                            style: TextStyle(fontSize: KrezioFont.caption, color: isDark ? KrezioColors.darkSecondaryText : KrezioColors.lightSecondaryText)),
+                            style: TextStyle(
+                                fontSize: KrezioFont.caption,
+                                color: isDark
+                                    ? KrezioColors.darkSecondaryText
+                                    : KrezioColors.lightSecondaryText)),
                         for (final up in const [true, false])
                           IconButton(
-                            icon: Icon(up ? Icons.thumb_up_alt_outlined : Icons.thumb_down_alt_outlined, size: 14),
+                            icon: Icon(
+                                up
+                                    ? Icons.thumb_up_alt_outlined
+                                    : Icons.thumb_down_alt_outlined,
+                                size: 14),
                             tooltip: up ? 'Ajudou' : 'Não ajudou',
                             padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                            constraints: const BoxConstraints(
+                                minWidth: 28, minHeight: 28),
                             onPressed: () {
-                              FeedbackService(widget.repository!).rateAnswer(helpful: up);
+                              FeedbackService(widget.repository!)
+                                  .rateAnswer(helpful: up);
                               setState(() => _rated[msg.id] = up);
                             },
                           ),
@@ -1970,25 +2035,22 @@ class _ChatScreenState extends State<ChatScreen> {
           // Contextual Quick Action Chips for Missing Slots
           if (!isUser && msg.draft != null && !msg.draft!.isComplete) ...[
             const SizedBox(height: KrezioSpace.sm),
-            Padding(
-              padding: const EdgeInsets.only(left: assistantIndent),
-              child: _buildMissingSlotsQuickChips(msg, isDark),
-            ),
+            _buildMissingSlotsQuickChips(msg, isDark),
           ],
 
           // Embedded Transaction Inspector Card if draft present
           if (msg.draft != null) ...[
             const SizedBox(height: KrezioSpace.sm),
-            Padding(
-              padding: const EdgeInsets.only(left: assistantIndent),
-              child: ListenableBuilder(
-                listenable: Listenable.merge([
-                  EnvironmentConfig.environmentNotifier,
-                  widget.repository,
-                ]),
-                builder: (context, _) => _buildTransactionInspectorCard(
-                  msg.draft!, isDark, msg.isMergedUpdate, ids: msg.transactionIds,
-                ),
+            ListenableBuilder(
+              listenable: Listenable.merge([
+                EnvironmentConfig.environmentNotifier,
+                widget.repository,
+              ]),
+              builder: (context, _) => _buildTransactionInspectorCard(
+                msg.draft!,
+                isDark,
+                msg.isMergedUpdate,
+                ids: msg.transactionIds,
               ),
             ),
           ],
@@ -2010,7 +2072,8 @@ class _ChatScreenState extends State<ChatScreen> {
       case ChipOnActiveDraft():
         _sendMessage(value);
       case ChipOnSavedRecords(:final transactionIds):
-        _sendMessage('muda o ${TransactionCode.label(transactionIds.first)} pra $value');
+        _sendMessage(
+            'muda o ${TransactionCode.label(transactionIds.first)} pra $value');
       case ChipOnStaleDraft():
         final back = msg.draft;
         if (back == null) {
@@ -2042,7 +2105,8 @@ class _ChatScreenState extends State<ChatScreen> {
           return ActionChip(
             label: Text(
               opt['label']!,
-              style: const TextStyle(fontSize: KrezioFont.small, fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                  fontSize: KrezioFont.small, fontWeight: FontWeight.w600),
             ),
             backgroundColor: isDark ? KrezioColors.darkSurface : Colors.white,
             side: const BorderSide(color: KrezioColors.aiPurple, width: 1),
@@ -2070,7 +2134,8 @@ class _ChatScreenState extends State<ChatScreen> {
           return ActionChip(
             label: Text(
               opt['label']!,
-              style: const TextStyle(fontSize: KrezioFont.small, fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                  fontSize: KrezioFont.small, fontWeight: FontWeight.w600),
             ),
             backgroundColor: isDark ? KrezioColors.darkSurface : Colors.white,
             side: const BorderSide(color: KrezioColors.aiPurple, width: 1),
@@ -2080,12 +2145,17 @@ class _ChatScreenState extends State<ChatScreen> {
       );
     }
 
-    if (draft.isRecurrent && (draft.missingSlots.contains('due_day') || draft.missingSlots.contains('recurrence_duration'))) {
+    if (draft.isRecurrent &&
+        (draft.missingSlots.contains('due_day') ||
+            draft.missingSlots.contains('recurrence_duration'))) {
       final nowDay = DateTime.now().day;
       final subOptions = <Map<String, String>>[];
       if (draft.missingSlots.contains('due_day')) {
         subOptions.addAll([
-          {'label': '📅 Renova hoje (dia $nowDay)', 'value': 'renova dia $nowDay'},
+          {
+            'label': '📅 Renova hoje (dia $nowDay)',
+            'value': 'renova dia $nowDay'
+          },
           {'label': '📅 Todo dia 5', 'value': 'todo dia 5'},
           {'label': '📅 Todo dia 10', 'value': 'todo dia 10'},
           {'label': '📅 Todo dia 15', 'value': 'todo dia 15'},
@@ -2112,7 +2182,8 @@ class _ChatScreenState extends State<ChatScreen> {
           return ActionChip(
             label: Text(
               opt['label']!,
-              style: const TextStyle(fontSize: KrezioFont.small, fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                  fontSize: KrezioFont.small, fontWeight: FontWeight.w600),
             ),
             backgroundColor: isDark ? KrezioColors.darkSurface : Colors.white,
             side: const BorderSide(color: KrezioColors.aiPurple, width: 1),
@@ -2123,7 +2194,8 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     if (draft.missingSlots.contains('payment_method')) {
-      final isCardAmbiguous = draft.rawText.toLowerCase().contains('cart') || draft.rawText.toLowerCase().contains('cratao');
+      final isCardAmbiguous = draft.rawText.toLowerCase().contains('cart') ||
+          draft.rawText.toLowerCase().contains('cratao');
       final paymentOptions = isCardAmbiguous
           ? [
               {'label': '💳 Débito', 'value': 'no débito'},
@@ -2139,12 +2211,21 @@ class _ChatScreenState extends State<ChatScreen> {
               {'label': '📄 Boleto', 'value': 'no boleto'},
             ];
       // The method used most goes first, marked — a suggestion, never assumed.
-      const valueOf = {'pix': 'no pix', 'debit_card': 'no débito', 'credit_card': 'no crédito', 'cash': 'em dinheiro', 'bank_slip': 'no boleto'};
+      const valueOf = {
+        'pix': 'no pix',
+        'debit_card': 'no débito',
+        'credit_card': 'no crédito',
+        'cash': 'em dinheiro',
+        'bank_slip': 'no boleto'
+      };
       final usual = valueOf[widget.repository?.mostUsedPaymentMethod];
       final usualIdx = paymentOptions.indexWhere((o) => o['value'] == usual);
       if (usualIdx >= 0) {
         final o = paymentOptions.removeAt(usualIdx);
-        paymentOptions.insert(0, {'label': '${o['label']} · o que você mais usa', 'value': o['value']!});
+        paymentOptions.insert(0, {
+          'label': '${o['label']} · o que você mais usa',
+          'value': o['value']!
+        });
       }
 
       return Wrap(
@@ -2154,7 +2235,8 @@ class _ChatScreenState extends State<ChatScreen> {
           return ActionChip(
             label: Text(
               opt['label']!,
-              style: const TextStyle(fontSize: KrezioFont.small, fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                  fontSize: KrezioFont.small, fontWeight: FontWeight.w600),
             ),
             backgroundColor: isDark ? KrezioColors.darkSurface : Colors.white,
             side: const BorderSide(color: KrezioColors.aiPurple, width: 1),
@@ -2164,9 +2246,11 @@ class _ChatScreenState extends State<ChatScreen> {
       );
     }
 
-    if (draft.missingSlots.length == 1 && draft.missingSlots.contains('amount')) {
+    if (draft.missingSlots.length == 1 &&
+        draft.missingSlots.contains('amount')) {
       final isSalary = draft.intent == 'income' && draft.category == 'salary';
-      final isLoan = draft.isReminder && draft.reminderType == 'loan_receivable';
+      final isLoan =
+          draft.isReminder && draft.reminderType == 'loan_receivable';
       final amountOptions = isSalary
           ? [
               {'label': 'R\$ 2.500', 'value': '2500'},
@@ -2196,7 +2280,8 @@ class _ChatScreenState extends State<ChatScreen> {
           return ActionChip(
             label: Text(
               opt['label']!,
-              style: const TextStyle(fontSize: KrezioFont.small, fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                  fontSize: KrezioFont.small, fontWeight: FontWeight.w600),
             ),
             backgroundColor: isDark ? KrezioColors.darkSurface : Colors.white,
             side: const BorderSide(color: KrezioColors.aiPurple, width: 1),
@@ -2209,10 +2294,15 @@ class _ChatScreenState extends State<ChatScreen> {
     return const SizedBox.shrink();
   }
 
-  Widget _buildTransactionInspectorCard(FinancialTransactionDraft draft, bool isDark, bool isMerged, {List<String> ids = const []}) {
-    final currentIds = widget.repository?.transactions.map((tx) => tx.id).toSet() ?? <String>{};
+  Widget _buildTransactionInspectorCard(
+      FinancialTransactionDraft draft, bool isDark, bool isMerged,
+      {List<String> ids = const []}) {
+    final currentIds =
+        widget.repository?.transactions.map((tx) => tx.id).toSet() ??
+            <String>{};
     final saved = ids.isNotEmpty && ids.every(currentIds.contains);
-    final missing = draft.missingSlots.isEmpty ? null : draft.missingSlots.first;
+    final missing =
+        draft.missingSlots.isEmpty ? null : draft.missingSlots.first;
     final status = switch ((saved, ids.isNotEmpty, missing)) {
       (true, _, _) => 'Registrado',
       (_, true, _) => 'Alterado ou removido',
@@ -2224,30 +2314,40 @@ class _ChatScreenState extends State<ChatScreen> {
       (_, _, null) => 'Não registrado',
       _ => 'Aguardando detalhes',
     };
-    final statusColor = saved ? KrezioColors.emeraldGreen : KrezioColors.friendlyOrange;
+    final statusColor =
+        saved ? KrezioColors.emeraldGreen : KrezioColors.friendlyOrange;
     final intentColor = _getIntentColor(draft.intent);
-    final baseSurface = isDark ? KrezioColors.darkSurface : KrezioColors.lightSurface;
+    final baseSurface =
+        isDark ? KrezioColors.darkSurface : KrezioColors.lightSurface;
     final cardSurface = Color.alphaBlend(
       intentColor.withValues(alpha: isDark ? 0.05 : 0.025),
       baseSurface,
     );
-    final primaryText = isDark ? KrezioColors.darkPrimaryText : KrezioColors.lightPrimaryText;
-    final secondaryText = isDark ? KrezioColors.darkSecondaryText : KrezioColors.lightSecondaryText;
+    final primaryText =
+        isDark ? KrezioColors.darkPrimaryText : KrezioColors.lightPrimaryText;
+    final secondaryText = isDark
+        ? KrezioColors.darkSecondaryText
+        : KrezioColors.lightSecondaryText;
     final borderColor = isDark
         ? statusColor.withValues(alpha: saved ? 0.28 : 0.42)
         : statusColor.withValues(alpha: saved ? 0.30 : 0.45);
-    final dividerColor = (isDark ? KrezioColors.darkBorder : KrezioColors.lightBorder).withValues(alpha: 0.65);
+    final dividerColor =
+        (isDark ? KrezioColors.darkBorder : KrezioColors.lightBorder)
+            .withValues(alpha: 0.65);
 
     final title = _draftDisplayTitle(draft);
     final dateLabel = _formatDraftDate(draft.dateOffsetDays);
     final categoryName = _formatCategory(draft.category);
     final paymentName = _formatPayment(draft.paymentMethod, draft.installments);
-    final amountText = draft.amount != null ? Money.brl(draft.amount!) : 'Valor pendente';
+    final amountText =
+        draft.amount != null ? Money.brl(draft.amount!) : 'Valor pendente';
     final amountColor = draft.amount == null
         ? KrezioColors.friendlyOrange
         : (draft.intent == 'income'
             ? KrezioColors.emeraldGreen
-            : (draft.intent == 'transfer' ? KrezioColors.aiPurpleLight : primaryText));
+            : (draft.intent == 'transfer'
+                ? KrezioColors.aiPurpleLight
+                : primaryText));
     final installmentLine = (draft.paymentMethod == 'credit_card' &&
             draft.installments != null &&
             draft.installments! > 1 &&
@@ -2290,7 +2390,8 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(KrezioSpace.lg, KrezioSpace.md, KrezioSpace.lg, KrezioSpace.lg),
+                padding: const EdgeInsets.fromLTRB(KrezioSpace.lg,
+                    KrezioSpace.md, KrezioSpace.lg, KrezioSpace.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -2305,15 +2406,18 @@ class _ChatScreenState extends State<ChatScreen> {
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: KrezioSpace.sm, vertical: 3),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: KrezioSpace.sm, vertical: 3),
                                 decoration: BoxDecoration(
-                                  color: intentColor.withValues(alpha: isDark ? 0.16 : 0.12),
+                                  color: intentColor.withValues(
+                                      alpha: isDark ? 0.16 : 0.12),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(_intentIcon(draft.intent), size: 12, color: intentColor),
+                                    Icon(_intentIcon(draft.intent),
+                                        size: 12, color: intentColor),
                                     const SizedBox(width: 4),
                                     Text(
                                       _formatIntentName(draft.intent),
@@ -2329,36 +2433,48 @@ class _ChatScreenState extends State<ChatScreen> {
                               ),
                               if (ids.isNotEmpty)
                                 Tooltip(
-                                  message: 'Use este código para falar deste lançamento, ex.: "apaga o ${TransactionCode.label(ids.first)}"',
+                                  message:
+                                      'Use este código para falar deste lançamento, ex.: "apaga o ${TransactionCode.label(ids.first)}"',
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                                      color:
+                                          (isDark ? Colors.white : Colors.black)
+                                              .withValues(alpha: 0.05),
                                       borderRadius: BorderRadius.circular(6),
                                       border: Border.all(color: dividerColor),
                                     ),
                                     child: Text(
-                                      ids.length == 1 ? TransactionCode.label(ids.first) : '${TransactionCode.label(ids.first)} +${ids.length - 1}',
+                                      ids.length == 1
+                                          ? TransactionCode.label(ids.first)
+                                          : '${TransactionCode.label(ids.first)} +${ids.length - 1}',
                                       style: TextStyle(
                                         color: secondaryText,
                                         fontSize: KrezioFont.micro,
                                         fontWeight: FontWeight.w600,
-                                        fontFeatures: const [FontFeature.tabularFigures()],
+                                        fontFeatures: const [
+                                          FontFeature.tabularFigures()
+                                        ],
                                       ),
                                     ),
                                   ),
                                 ),
                               if (isMerged)
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: KrezioColors.aiPurple.withValues(alpha: 0.14),
+                                    color: KrezioColors.aiPurple
+                                        .withValues(alpha: 0.14),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: const Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.sync_rounded, size: 11, color: KrezioColors.aiPurpleLight),
+                                      Icon(Icons.sync_rounded,
+                                          size: 11,
+                                          color: KrezioColors.aiPurpleLight),
                                       SizedBox(width: 3),
                                       Text(
                                         'Atualizado',
@@ -2376,16 +2492,20 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                         const SizedBox(width: KrezioSpace.sm),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: KrezioSpace.sm, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: KrezioSpace.sm, vertical: 3),
                           decoration: BoxDecoration(
-                            color: statusColor.withValues(alpha: isDark ? 0.14 : 0.10),
+                            color: statusColor.withValues(
+                                alpha: isDark ? 0.14 : 0.10),
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                saved ? Icons.check_circle_rounded : Icons.schedule_rounded,
+                                saved
+                                    ? Icons.check_circle_rounded
+                                    : Icons.schedule_rounded,
                                 size: 12,
                                 color: statusColor,
                               ),
@@ -2445,10 +2565,13 @@ class _ChatScreenState extends State<ChatScreen> {
                               amountText,
                               style: TextStyle(
                                 color: amountColor,
-                                fontSize: draft.amount != null ? 20 : KrezioFont.body,
+                                fontSize:
+                                    draft.amount != null ? 20 : KrezioFont.body,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: -0.3,
-                                fontFeatures: const [FontFeature.tabularFigures()],
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures()
+                                ],
                               ),
                             ),
                             if (installmentLine != null) ...[
@@ -2459,7 +2582,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                   color: secondaryText,
                                   fontSize: KrezioFont.micro,
                                   fontWeight: FontWeight.w600,
-                                  fontFeatures: const [FontFeature.tabularFigures()],
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures()
+                                  ],
                                 ),
                               ),
                             ],
@@ -2505,7 +2630,8 @@ class _ChatScreenState extends State<ChatScreen> {
                           _buildCardMetaPill(
                             icon: Icons.repeat_rounded,
                             label: 'Recorrente',
-                            value: draft.dueDay != null || draft.dueBusinessDay != null
+                            value: draft.dueDay != null ||
+                                    draft.dueBusinessDay != null
                                 ? '${draft.dueBusinessDay != null ? "${draft.dueBusinessDay}º dia útil" : "Dia ${draft.dueDay}"}${draft.recurrenceDuration != null ? " · ${draft.recurrenceDuration}" : ""}'
                                 : 'Mensal${draft.recurrenceDuration != null ? " (${draft.recurrenceDuration})" : ""}',
                             accentColor: KrezioColors.emeraldGreen,
@@ -2525,19 +2651,26 @@ class _ChatScreenState extends State<ChatScreen> {
                     if (draft.isReminder) ...[
                       const SizedBox(height: KrezioSpace.md),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: KrezioSpace.md, vertical: KrezioSpace.sm),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: KrezioSpace.md,
+                            vertical: KrezioSpace.sm),
                         decoration: BoxDecoration(
-                          color: KrezioColors.friendlyOrange.withValues(alpha: 0.10),
+                          color: KrezioColors.friendlyOrange
+                              .withValues(alpha: 0.10),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: KrezioColors.friendlyOrange.withValues(alpha: 0.28)),
+                          border: Border.all(
+                              color: KrezioColors.friendlyOrange
+                                  .withValues(alpha: 0.28)),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.event_available_rounded, size: 15, color: KrezioColors.friendlyOrange),
+                            const Icon(Icons.event_available_rounded,
+                                size: 15, color: KrezioColors.friendlyOrange),
                             const SizedBox(width: KrezioSpace.sm),
                             Expanded(
                               child: Text(
-                                draft.calendarConsultationNote ?? 'Lembrete agendado no seu calendário',
+                                draft.calendarConsultationNote ??
+                                    'Lembrete agendado no seu calendário',
                                 style: const TextStyle(
                                   fontSize: KrezioFont.caption,
                                   fontWeight: FontWeight.w600,
@@ -2553,15 +2686,18 @@ class _ChatScreenState extends State<ChatScreen> {
                     if (draft.missingSlots.isNotEmpty) ...[
                       const SizedBox(height: KrezioSpace.sm),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: KrezioSpace.md, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: KrezioSpace.md, vertical: 6),
                         decoration: BoxDecoration(
-                          color: KrezioColors.friendlyOrange.withValues(alpha: 0.08),
+                          color: KrezioColors.friendlyOrange
+                              .withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.edit_note_rounded, size: 14, color: KrezioColors.friendlyOrange),
+                            const Icon(Icons.edit_note_rounded,
+                                size: 14, color: KrezioColors.friendlyOrange),
                             const SizedBox(width: 6),
                             Flexible(
                               child: Text(
@@ -2581,7 +2717,8 @@ class _ChatScreenState extends State<ChatScreen> {
                     ValueListenableBuilder<AppEnvironment>(
                       valueListenable: EnvironmentConfig.environmentNotifier,
                       builder: (context, env, _) {
-                        if (env != AppEnvironment.homologation) return const SizedBox.shrink();
+                        if (env != AppEnvironment.homologation)
+                          return const SizedBox.shrink();
                         return Padding(
                           padding: const EdgeInsets.only(top: KrezioSpace.md),
                           child: InkWell(
@@ -2600,16 +2737,22 @@ class _ChatScreenState extends State<ChatScreen> {
                             },
                             child: Container(
                               width: double.infinity,
-                              padding: const EdgeInsets.symmetric(horizontal: KrezioSpace.md, vertical: KrezioSpace.sm),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: KrezioSpace.md,
+                                  vertical: KrezioSpace.sm),
                               decoration: BoxDecoration(
-                                color: KrezioColors.aiPurple.withValues(alpha: 0.10),
+                                color: KrezioColors.aiPurple
+                                    .withValues(alpha: 0.10),
                                 borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: KrezioColors.aiPurple.withValues(alpha: 0.30)),
+                                border: Border.all(
+                                    color: KrezioColors.aiPurple
+                                        .withValues(alpha: 0.30)),
                               ),
                               child: const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.hub_outlined, color: KrezioColors.aiPurple, size: 14),
+                                  Icon(Icons.hub_outlined,
+                                      color: KrezioColors.aiPurple, size: 14),
                                   SizedBox(width: KrezioSpace.sm),
                                   Text(
                                     'Inspecionar Pipeline NLP & XAI (Homologação)',
@@ -2647,17 +2790,26 @@ class _ChatScreenState extends State<ChatScreen> {
     final pillColor = isMissing ? KrezioColors.friendlyOrange : accentColor;
     final pillBg = isMissing
         ? KrezioColors.friendlyOrange.withValues(alpha: isDark ? 0.12 : 0.08)
-        : (isDark ? KrezioColors.darkSurfaceVariant.withValues(alpha: 0.85) : const Color(0xFFF3F4F6));
+        : (isDark
+            ? KrezioColors.darkSurfaceVariant.withValues(alpha: 0.85)
+            : const Color(0xFFF3F4F6));
     final border = isMissing
         ? KrezioColors.friendlyOrange.withValues(alpha: 0.30)
-        : (isDark ? KrezioColors.darkBorder.withValues(alpha: 0.6) : KrezioColors.lightBorder);
-    final labelColor = isDark ? KrezioColors.darkSecondaryText : KrezioColors.lightSecondaryText;
+        : (isDark
+            ? KrezioColors.darkBorder.withValues(alpha: 0.6)
+            : KrezioColors.lightBorder);
+    final labelColor = isDark
+        ? KrezioColors.darkSecondaryText
+        : KrezioColors.lightSecondaryText;
     final valueColor = isMissing
         ? KrezioColors.friendlyOrange
-        : (isDark ? KrezioColors.darkPrimaryText : KrezioColors.lightPrimaryText);
+        : (isDark
+            ? KrezioColors.darkPrimaryText
+            : KrezioColors.lightPrimaryText);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: KrezioSpace.md, vertical: 7),
+      padding:
+          const EdgeInsets.symmetric(horizontal: KrezioSpace.md, vertical: 7),
       decoration: BoxDecoration(
         color: pillBg,
         borderRadius: BorderRadius.circular(10),
@@ -2682,7 +2834,10 @@ class _ChatScreenState extends State<ChatScreen> {
               children: [
                 Text(
                   label,
-                  style: TextStyle(fontSize: KrezioFont.micro, color: labelColor, height: 1.1),
+                  style: TextStyle(
+                      fontSize: KrezioFont.micro,
+                      color: labelColor,
+                      height: 1.1),
                 ),
                 Text(
                   value,
@@ -2704,7 +2859,10 @@ class _ChatScreenState extends State<ChatScreen> {
 
   String _draftDisplayTitle(FinancialTransactionDraft draft) {
     final desc = draft.description.trim();
-    if (desc.isNotEmpty && desc != 'unknown' && desc != 'expense_other' && desc != 'income_other') {
+    if (desc.isNotEmpty &&
+        desc != 'unknown' &&
+        desc != 'expense_other' &&
+        desc != 'income_other') {
       return '${desc[0].toUpperCase()}${desc.substring(1)}';
     }
     if (draft.category != 'unknown') return _formatCategory(draft.category);

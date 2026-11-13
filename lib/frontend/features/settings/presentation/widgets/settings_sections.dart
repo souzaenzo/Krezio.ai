@@ -6,12 +6,14 @@ import 'statement_file.dart';
 import '../../../../theme/krezio_theme.dart';
 import '../../../../theme/theme_controller.dart';
 import '../../../../widgets/krezio_components.dart';
+import '../../../../widgets/krezio_segmented_control.dart';
 import '../../../../../backend/repositories/financial_repository.dart';
 import '../../../../../backend/services/data_export.dart';
 import '../../../../../backend/services/notification_service.dart';
 import '../../../../../backend/services/tax_report.dart';
 import '../../../import/import_statement_screen.dart';
 import '../../../onboarding/onboarding_screen.dart';
+import '../../../dashboard/presentation/screens/dashboard_screen.dart';
 import '../../../../../ai/voice/native_tts.dart';
 import '../../../../../ai/voice/voice_synthesis_service.dart';
 import '../../../../../backend/services/pin_lock.dart';
@@ -27,20 +29,58 @@ class SettingsGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = KrezioPalette.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: KrezioSpace.lg),
-      child: KrezioCard(
-        padding: const EdgeInsets.symmetric(vertical: KrezioSpace.sm),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(KrezioSpace.lg, KrezioSpace.sm, KrezioSpace.lg, KrezioSpace.xs),
-              child: Text(title, style: const TextStyle(fontSize: KrezioFont.body, fontWeight: FontWeight.bold)),
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Semantics(
+            header: true,
+            child: Text(
+              title,
+              style: TextStyle(
+                fontFamily: KrezioTheme.displayFamily,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: palette.primaryText,
+              ),
             ),
-            ...children,
-          ],
-        ),
+          ),
+          const SizedBox(height: 8),
+          KrezioCard(
+            padding: EdgeInsets.zero,
+            child: ListTileTheme(
+              data: ListTileThemeData(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                minTileHeight: 60,
+                horizontalTitleGap: 10,
+                iconColor: palette.secondaryText,
+                titleTextStyle: TextStyle(
+                  fontFamily: KrezioTheme.bodyFamily,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: palette.primaryText,
+                ),
+                subtitleTextStyle: TextStyle(
+                  fontFamily: KrezioTheme.bodyFamily,
+                  fontSize: 13,
+                  color: palette.secondaryText,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final (index, child) in children.indexed) ...[
+                    if (index > 0) Divider(height: 1, color: palette.border),
+                    child,
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -60,34 +100,40 @@ class _ProfileSectionState extends State<ProfileSection> {
   Widget build(BuildContext context) {
     final repository = widget.repository;
     final name = repository.preference(FinancialRepository.prefUserName);
-    return SettingsGroup(title: 'Perfil', children: [
-      ListTile(
-        leading: const Icon(Icons.person_outline, color: KrezioColors.aiPurple),
-        title: const Text('Como o César te chama'),
-        subtitle: Text(name ?? 'Não definido'),
-        trailing: const Icon(Icons.edit_outlined, size: 18),
-        onTap: () async {
-          final c = TextEditingController(text: name);
-          await showKrezioFormDialog(
-            context,
-            title: 'Seu nome',
-            confirmLabel: 'Salvar',
-            fields: [KrezioTextField(controller: c, label: 'Nome', autofocus: true, textCapitalization: TextCapitalization.words)],
-            onConfirm: () {
-              final v = c.text.trim();
-              repository.setPreference(FinancialRepository.prefUserName, v.isEmpty ? null : v);
-              return true;
-            },
-          );
-          if (mounted) setState(() {});
-        },
-      ),
-      const ListTile(
-        leading: Icon(Icons.payments_outlined, color: KrezioColors.aiPurple),
-        title: Text('Moeda'),
-        subtitle: Text('Real (R\$)'),
-      ),
-    ]);
+    return SettingsGroup(
+      title: 'Perfil',
+      children: [
+        ListTile(
+          title: const Text('Como o César te chama'),
+          subtitle: Text(name ?? 'Ainda não definido'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () async {
+            final c = TextEditingController(text: name);
+            await showKrezioFormDialog(
+              context,
+              title: 'Seu nome',
+              confirmLabel: 'Salvar',
+              fields: [
+                KrezioTextField(
+                  controller: c,
+                  label: 'Nome',
+                  autofocus: true,
+                  textCapitalization: TextCapitalization.words,
+                ),
+              ],
+              onConfirm: () {
+                final v = c.text.trim();
+                repository.setPreference(
+                    FinancialRepository.prefUserName, v.isEmpty ? null : v);
+                return true;
+              },
+            );
+            if (mounted) setState(() {});
+          },
+        ),
+        const ListTile(title: Text('Moeda'), subtitle: Text('Real (R\$)')),
+      ],
+    );
   }
 }
 
@@ -98,25 +144,70 @@ class AppearanceSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SettingsGroup(title: 'Aparência', children: [
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: KrezioSpace.lg, vertical: KrezioSpace.sm),
-        child: ValueListenableBuilder<ThemeMode>(
-          valueListenable: ThemeController.mode,
-          builder: (context, mode, _) => SegmentedButton<ThemeMode>(
-            segments: [
-              for (final m in const [ThemeMode.system, ThemeMode.light, ThemeMode.dark])
-                ButtonSegment(value: m, label: Text(ThemeController.labelOf(m), style: const TextStyle(fontSize: KrezioFont.small))),
+    final palette = KrezioPalette.of(context);
+    return SettingsGroup(
+      title: 'Aparência',
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ValueListenableBuilder<ThemeMode>(
+                valueListenable: ThemeController.mode,
+                builder: (context, mode, _) =>
+                    KrezioSegmentedControl<ThemeMode>(
+                  options: const {
+                    ThemeMode.system: 'Sistema',
+                    ThemeMode.light: 'Claro',
+                    ThemeMode.dark: 'Escuro',
+                  },
+                  selected: mode,
+                  onChanged: (selection) {
+                    ThemeController.mode.value = selection;
+                    repository.setPreference(ThemeController.pref,
+                        ThemeController.nameOf(selection));
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Sistema segue o tema do seu aparelho.',
+                style: TextStyle(fontSize: 12, color: palette.secondaryText),
+              ),
             ],
-            selected: {mode},
-            onSelectionChanged: (s) {
-              ThemeController.mode.value = s.first;
-              repository.setPreference(ThemeController.pref, ThemeController.nameOf(s.first));
-            },
           ),
         ),
-      ),
-    ]);
+      ],
+    );
+  }
+}
+
+class DisplayPrivacySection extends StatelessWidget {
+  const DisplayPrivacySection({super.key, required this.repository});
+
+  final FinancialRepository repository;
+
+  @override
+  Widget build(BuildContext context) {
+    return SettingsGroup(
+      title: 'Privacidade',
+      children: [
+        AnimatedBuilder(
+          animation: repository,
+          builder: (context, _) => SwitchListTile(
+            title: const Text('Ocultar valores no Início'),
+            subtitle:
+                const Text('Mostra pontos no lugar dos valores do painel.'),
+            value:
+                repository.preference(DashboardScreen.hideAmountsPreference) ==
+                    'true',
+            onChanged: (hidden) => repository.setPreference(
+                DashboardScreen.hideAmountsPreference, hidden.toString()),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -124,7 +215,8 @@ class AppearanceSection extends StatelessWidget {
 class SecuritySection extends StatefulWidget {
   final PinLock lock;
   final BiometricAuth biometric;
-  const SecuritySection({super.key, required this.lock, required this.biometric});
+  const SecuritySection(
+      {super.key, required this.lock, required this.biometric});
 
   @override
   State<SecuritySection> createState() => _SecuritySectionState();
@@ -167,16 +259,30 @@ class _SecuritySectionState extends State<SecuritySection> {
         builder: (ctx, setLocal) => AlertDialog(
           title: const Text('Criar PIN'),
           content: Column(mainAxisSize: MainAxisSize.min, children: [
-            KrezioTextField(controller: a, label: 'PIN (4 a 6 dígitos)', obscureText: true, keyboardType: TextInputType.number, autofocus: true),
+            KrezioTextField(
+                controller: a,
+                label: 'PIN (4 a 6 dígitos)',
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                autofocus: true),
             const SizedBox(height: KrezioSpace.sm),
-            KrezioTextField(controller: b, label: 'Repita o PIN', obscureText: true, keyboardType: TextInputType.number, errorText: error),
+            KrezioTextField(
+                controller: b,
+                label: 'Repita o PIN',
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                errorText: error),
           ]),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+            TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancelar')),
             FilledButton(
               onPressed: () async {
-                if (!PinLock.isValidPin(a.text)) return setLocal(() => error = 'Use de 4 a 6 números.');
-                if (a.text != b.text) return setLocal(() => error = 'Os PINs não são iguais.');
+                if (!PinLock.isValidPin(a.text))
+                  return setLocal(() => error = 'Use de 4 a 6 números.');
+                if (a.text != b.text)
+                  return setLocal(() => error = 'Os PINs não são iguais.');
                 await widget.lock.setPin(a.text, b.text);
                 if (ctx.mounted) Navigator.pop(ctx, true);
               },
@@ -217,7 +323,8 @@ class _SecuritySectionState extends State<SecuritySection> {
         ),
         if (_bioAvailable)
           SwitchListTile(
-            secondary: const Icon(Icons.fingerprint, color: KrezioColors.aiPurple),
+            secondary:
+                const Icon(Icons.fingerprint, color: KrezioColors.aiPurple),
             title: const Text('Desbloquear com digital ou rosto'),
             subtitle: const Text('O PIN continua valendo'),
             value: _bioOn,
@@ -228,7 +335,8 @@ class _SecuritySectionState extends State<SecuritySection> {
             },
           ),
         ListTile(
-          leading: const Icon(Icons.timer_outlined, color: KrezioColors.aiPurple),
+          leading:
+              const Icon(Icons.timer_outlined, color: KrezioColors.aiPurple),
           title: const Text('Bloquear depois de sair do app'),
           trailing: DropdownButton<int>(
             value: _after.inSeconds,
@@ -277,14 +385,17 @@ class PrivacySection extends StatelessWidget {
       await SharePlus.instance.share(ShareParams(
         title: 'Meus dados do Krezio.ai',
         files: [
-          XFile.fromData(json, mimeType: 'application/json', name: '$base.json'),
-          XFile.fromData(csv, mimeType: 'text/csv', name: '$base-lancamentos.csv'),
+          XFile.fromData(json,
+              mimeType: 'application/json', name: '$base.json'),
+          XFile.fromData(csv,
+              mimeType: 'text/csv', name: '$base-lancamentos.csv'),
         ],
         fileNameOverrides: ['$base.json', '$base-lancamentos.csv'],
       ));
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Não foi possível exportar: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Não foi possível exportar: $e')));
       }
     }
   }
@@ -296,22 +407,33 @@ class PrivacySection extends StatelessWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocal) => AlertDialog(
-          title: Text(account ? 'Excluir minha conta' : 'Apagar todos os dados'),
+          title:
+              Text(account ? 'Excluir minha conta' : 'Apagar todos os dados'),
           scrollable: true,
-          content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(account
-                ? 'Isso apaga a sua conta ($userEmail) e todos os seus dados na nuvem e neste aparelho. Não dá para desfazer.'
-                : 'Isso apaga lançamentos, contas, metas, lembretes, categorias personalizadas e preferências '
-                  '${userEmail != null ? 'da conta na nuvem e deste aparelho. Seu login será mantido.' : 'deste aparelho.'}'),
-            const SizedBox(height: KrezioSpace.md),
-            Text('Para confirmar, digite $keyword'),
-            TextField(autofocus: true, onChanged: (value) => setLocal(() => confirmation = value)),
-          ]),
+          content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(account
+                    ? 'Isso apaga a sua conta ($userEmail) e todos os seus dados na nuvem e neste aparelho. Não dá para desfazer.'
+                    : 'Isso apaga lançamentos, contas, metas, lembretes, categorias personalizadas e preferências '
+                        '${userEmail != null ? 'da conta na nuvem e deste aparelho. Seu login será mantido.' : 'deste aparelho.'}'),
+                const SizedBox(height: KrezioSpace.md),
+                Text('Para confirmar, digite $keyword'),
+                TextField(
+                    autofocus: true,
+                    onChanged: (value) => setLocal(() => confirmation = value)),
+              ]),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+            TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancelar')),
             FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: KrezioColors.budgetOver),
-              onPressed: confirmation.trim() == keyword ? () => Navigator.pop(ctx, true) : null,
+              style: FilledButton.styleFrom(
+                  backgroundColor: KrezioColors.budgetOver),
+              onPressed: confirmation.trim() == keyword
+                  ? () => Navigator.pop(ctx, true)
+                  : null,
               child: Text(account ? 'Excluir' : 'Apagar'),
             ),
           ],
@@ -326,65 +448,85 @@ class PrivacySection extends StatelessWidget {
         await (onClearData ?? repository.clearAllData)();
       }
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pronto, tudo foi apagado.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Pronto, tudo foi apagado.')));
       }
     } catch (e) {
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+      if (context.mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final palette = KrezioPalette.of(context);
     final accepted = repository.preference(LegalDocuments.acceptedPref);
     String? acceptedLabel;
     if (accepted != null && accepted.contains('|')) {
       final d = DateTime.tryParse(accepted.split('|')[1]);
-      if (d != null) acceptedLabel = 'Versão ${accepted.split('|')[0]} aceita em ${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+      if (d != null)
+        acceptedLabel =
+            'Versão ${accepted.split('|')[0]} aceita em ${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
     }
-    return SettingsGroup(title: 'Privacidade e dados', children: [
-      ListTile(
-        leading: const Icon(Icons.description_outlined, color: KrezioColors.aiPurple),
-        title: const Text('Termos de uso'),
-        subtitle: acceptedLabel != null ? Text(acceptedLabel) : null,
-        onTap: () => LegalDocuments.open(context, title: 'Termos de uso', asset: LegalDocuments.termsAsset),
-      ),
-      ListTile(
-        leading: const Icon(Icons.privacy_tip_outlined, color: KrezioColors.aiPurple),
-        title: const Text('Política de privacidade'),
-        onTap: () => LegalDocuments.open(context, title: 'Política de privacidade', asset: LegalDocuments.privacyAsset),
-      ),
-      ListTile(
-        leading: const Icon(Icons.file_download_outlined, color: KrezioColors.aiPurple),
-        title: const Text('Exportar meus dados'),
-        subtitle: const Text('JSON completo e CSV dos lançamentos (abre no Excel)'),
-        onTap: () => _export(context),
-      ),
-      if (onExportLegacy != null)
+    return SettingsGroup(
+      title: 'Seus dados',
+      children: [
         ListTile(
-          leading: const Icon(Icons.restore_outlined),
-          title: const Text('Exportar dados antigos deste aparelho'),
-          onTap: () async {
-            try {
-              await onExportLegacy!();
-            } catch (_) {
-              if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Não foi possível exportar os dados antigos.')),
-              );
-            }
-          },
+          title: const Text('Termos de uso'),
+          subtitle: acceptedLabel != null ? Text(acceptedLabel) : null,
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => LegalDocuments.open(context,
+              title: 'Termos de uso', asset: LegalDocuments.termsAsset),
         ),
-      ListTile(
-        leading: const Icon(Icons.delete_forever_outlined, color: KrezioColors.budgetOver),
-        title: const Text('Apagar todos os dados', style: TextStyle(color: KrezioColors.budgetOver)),
-        onTap: () => _delete(context, account: false),
-      ),
-      if (onDeleteAccount != null)
         ListTile(
-          leading: const Icon(Icons.person_remove_outlined, color: KrezioColors.budgetOver),
-          title: const Text('Excluir minha conta', style: TextStyle(color: KrezioColors.budgetOver)),
-          onTap: () => _delete(context, account: true),
+          title: const Text('Política de privacidade'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => LegalDocuments.open(
+            context,
+            title: 'Política de privacidade',
+            asset: LegalDocuments.privacyAsset,
+          ),
         ),
-    ]);
+        ListTile(
+          title: const Text('Exportar meus dados'),
+          subtitle:
+              const Text('JSON completo e CSV dos lançamentos (abre no Excel)'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _export(context),
+        ),
+        if (onExportLegacy != null)
+          ListTile(
+            title: const Text('Exportar dados antigos deste aparelho'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () async {
+              try {
+                await onExportLegacy!();
+              } catch (_) {
+                if (context.mounted)
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text(
+                            'Não foi possível exportar os dados antigos.')),
+                  );
+              }
+            },
+          ),
+        ListTile(
+          title: Text('Apagar todos os dados',
+              style: TextStyle(color: palette.attention)),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _delete(context, account: false),
+        ),
+        if (onDeleteAccount != null)
+          ListTile(
+            title: Text('Excluir minha conta',
+                style: TextStyle(color: palette.attention)),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _delete(context, account: true),
+          ),
+      ],
+    );
   }
 }
 
@@ -405,18 +547,23 @@ class _NotificationsSectionState extends State<NotificationsSection> {
     final pendingCount = _service.evaluatePendingNotifications().length;
     return SettingsGroup(title: 'Notificações Push & Lembretes', children: [
       SwitchListTile(
-        secondary: const Icon(Icons.notifications_active_outlined, color: KrezioColors.aiPurple),
+        secondary: const Icon(Icons.notifications_active_outlined,
+            color: KrezioColors.aiPurple),
         title: const Text('Notificações de Lembretes e Contas'),
-        subtitle: const Text('Avise quando contas a pagar ou a receber estiverem próximas do vencimento'),
+        subtitle: const Text(
+            'Avise quando contas a pagar ou a receber estiverem próximas do vencimento'),
         value: _service.remindersPushEnabled,
         onChanged: (val) => setState(() => _service.remindersPushEnabled = val),
       ),
       SwitchListTile(
-        secondary: const Icon(Icons.edit_calendar_outlined, color: KrezioColors.aiPurple),
+        secondary: const Icon(Icons.edit_calendar_outlined,
+            color: KrezioColors.aiPurple),
         title: const Text('Lembrete diário para fazer lançamentos'),
-        subtitle: Text('Lembrar às ${_service.dailyLogReminderHour.toString().padLeft(2, '0')}:00 de registrar gastos e receitas'),
+        subtitle: Text(
+            'Lembrar às ${_service.dailyLogReminderHour.toString().padLeft(2, '0')}:00 de registrar gastos e receitas'),
         value: _service.dailyLogReminderEnabled,
-        onChanged: (val) => setState(() => _service.dailyLogReminderEnabled = val),
+        onChanged: (val) =>
+            setState(() => _service.dailyLogReminderEnabled = val),
       ),
       if (_service.dailyLogReminderEnabled)
         ListTile(
@@ -427,7 +574,9 @@ class _NotificationsSectionState extends State<NotificationsSection> {
             underline: const SizedBox.shrink(),
             items: [
               for (final h in const [9, 12, 18, 20, 21, 22])
-                DropdownMenuItem(value: h, child: Text('${h.toString().padLeft(2, '0')}:00')),
+                DropdownMenuItem(
+                    value: h,
+                    child: Text('${h.toString().padLeft(2, '0')}:00')),
             ],
             onChanged: (h) {
               if (h != null) setState(() => _service.dailyLogReminderHour = h);
@@ -435,7 +584,8 @@ class _NotificationsSectionState extends State<NotificationsSection> {
           ),
         ),
       ListTile(
-        leading: const Icon(Icons.send_to_mobile_outlined, color: KrezioColors.emeraldGreen),
+        leading: const Icon(Icons.send_to_mobile_outlined,
+            color: KrezioColors.emeraldGreen),
         title: const Text('Verificar / Testar Notificação Push'),
         subtitle: Text(
           pendingCount > 0
@@ -459,28 +609,37 @@ class ToolsSection extends StatelessWidget {
       final file = '${DataExport.fileBase(DateTime.now())}-extrato.csv';
       final result = await exportStatementFile(file, bytes);
       if (context.mounted && result != null) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result)));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(result)));
       }
     } catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: const Text('Não foi possível exportar o extrato.'),
-        action: SnackBarAction(label: 'Tentar de novo', onPressed: () => _statement(context)),
+        action: SnackBarAction(
+            label: 'Tentar de novo', onPressed: () => _statement(context)),
       ));
     }
   }
 
   Future<void> _taxReport(BuildContext context) async {
-    final years = {for (final t in repository.transactions) t.date.year}.toList()..sort((a, b) => b.compareTo(a));
+    final years = {for (final t in repository.transactions) t.date.year}
+        .toList()
+      ..sort((a, b) => b.compareTo(a));
     if (years.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ainda não há lançamentos.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ainda não há lançamentos.')));
       return;
     }
     final year = await showDialog<int>(
       context: context,
       builder: (ctx) => SimpleDialog(
         title: const Text('Ano do relatório'),
-        children: [for (final y in years) SimpleDialogOption(onPressed: () => Navigator.pop(ctx, y), child: Text('$y'))],
+        children: [
+          for (final y in years)
+            SimpleDialogOption(
+                onPressed: () => Navigator.pop(ctx, y), child: Text('$y'))
+        ],
       ),
     );
     if (year == null) return;
@@ -488,11 +647,16 @@ class ToolsSection extends StatelessWidget {
     try {
       await SharePlus.instance.share(ShareParams(
         title: 'Relatório para o IR $year',
-        files: [XFile.fromData(utf8.encode(report.toCsv()), mimeType: 'text/csv', name: 'krezio-ir-$year.csv')],
+        files: [
+          XFile.fromData(utf8.encode(report.toCsv()),
+              mimeType: 'text/csv', name: 'krezio-ir-$year.csv')
+        ],
         fileNameOverrides: ['krezio-ir-$year.csv'],
       ));
     } catch (e) {
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Não foi possível exportar: $e')));
+      if (context.mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Não foi possível exportar: $e')));
     }
   }
 
@@ -500,9 +664,11 @@ class ToolsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return SettingsGroup(title: 'Ferramentas & Tour', children: [
       ListTile(
-        leading: const Icon(Icons.explore_outlined, color: KrezioColors.aiPurple),
+        leading:
+            const Icon(Icons.explore_outlined, color: KrezioColors.aiPurple),
         title: const Text('Tour pelo Krezio & César'),
-        subtitle: const Text('Reveja todas as funcionalidades do app passo a passo'),
+        subtitle:
+            const Text('Reveja todas as funcionalidades do app passo a passo'),
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
@@ -514,20 +680,27 @@ class ToolsSection extends StatelessWidget {
         ),
       ),
       ListTile(
-        leading: const Icon(Icons.file_download_outlined, color: KrezioColors.aiPurple),
+        leading: const Icon(Icons.file_download_outlined,
+            color: KrezioColors.aiPurple),
         title: const Text('Exportar extrato (CSV)'),
         onTap: () => _statement(context),
       ),
       ListTile(
         leading: const Icon(Icons.upload_file, color: KrezioColors.aiPurple),
         title: const Text('Importar extrato do banco'),
-        subtitle: const Text('PDF (Itaú e outros), OFX ou CSV, sem duplicar o que já existe'),
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ImportStatementScreen(repository: repository))),
+        subtitle: const Text(
+            'PDF (Itaú e outros), OFX ou CSV, sem duplicar o que já existe'),
+        onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => ImportStatementScreen(repository: repository))),
       ),
       ListTile(
-        leading: const Icon(Icons.receipt_long_outlined, color: KrezioColors.aiPurple),
+        leading: const Icon(Icons.receipt_long_outlined,
+            color: KrezioColors.aiPurple),
         title: const Text('Relatório para o Imposto de Renda'),
-        subtitle: const Text('Saúde, educação e rendimentos por fonte, por ano'),
+        subtitle:
+            const Text('Saúde, educação e rendimentos por fonte, por ano'),
         onTap: () => _taxReport(context),
       ),
     ]);
@@ -564,25 +737,34 @@ class _VoiceSectionState extends State<VoiceSection> {
           shrinkWrap: true,
           children: [
             const Padding(
-              padding: EdgeInsets.fromLTRB(KrezioSpace.lg, 0, KrezioSpace.lg, KrezioSpace.sm),
-              child: Text('Toque numa voz para ouvir e usar.', style: TextStyle(fontSize: KrezioFont.small)),
+              padding: EdgeInsets.fromLTRB(
+                  KrezioSpace.lg, 0, KrezioSpace.lg, KrezioSpace.sm),
+              child: Text('Toque numa voz para ouvir e usar.',
+                  style: TextStyle(fontSize: KrezioFont.small)),
             ),
             ListTile(
-              leading: const Icon(Icons.auto_awesome, color: KrezioColors.aiPurple),
+              leading:
+                  const Icon(Icons.auto_awesome, color: KrezioColors.aiPurple),
               title: const Text('Padrão do Google (voz masculina natural)'),
-              subtitle: const Text('Google TTS · prioriza voz Neural HD masculina'),
+              subtitle:
+                  const Text('Google TTS · prioriza voz Neural HD masculina'),
               onTap: () async {
                 _synthesis.setUseQuantizedOnnx(false);
                 await tts.useVoice(null);
-                await _synthesis.speak('Olá! Eu sou o César. Como posso te ajudar hoje?');
+                await _synthesis
+                    .speak('Olá! Eu sou o César. Como posso te ajudar hoje?');
               },
             ),
             if (voices.isEmpty)
-              const ListTile(title: Text('Nenhuma voz em português instalada. Instale nas configurações de voz do celular.')),
+              const ListTile(
+                  title: Text(
+                      'Nenhuma voz em português instalada. Instale nas configurações de voz do celular.')),
             for (final v in voices)
               ListTile(
-                leading: Icon(v.male ? Icons.man : Icons.record_voice_over_outlined),
-                title: Text(v.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                leading:
+                    Icon(v.male ? Icons.man : Icons.record_voice_over_outlined),
+                title:
+                    Text(v.name, maxLines: 1, overflow: TextOverflow.ellipsis),
                 subtitle: Text(
                   '${v.locale}${v.isNatural ? ' · ✨ Natural HD' : ''}${v.isGoogle ? ' · Google' : ''}${v.male ? ' · masculina' : ''}${v.local ? '' : ' · online'}',
                 ),
@@ -590,7 +772,8 @@ class _VoiceSectionState extends State<VoiceSection> {
                 onTap: () async {
                   _synthesis.setUseQuantizedOnnx(false);
                   await tts.useVoice(v.name);
-                  await _synthesis.speak('Olá! Eu sou o César. Como posso te ajudar hoje?');
+                  await _synthesis
+                      .speak('Olá! Eu sou o César. Como posso te ajudar hoje?');
                 },
               ),
           ],
@@ -603,9 +786,11 @@ class _VoiceSectionState extends State<VoiceSection> {
   Widget build(BuildContext context) {
     return SettingsGroup(title: 'Voz do César', children: [
       ListTile(
-        leading: const Icon(Icons.record_voice_over_outlined, color: KrezioColors.aiPurple),
+        leading: const Icon(Icons.record_voice_over_outlined,
+            color: KrezioColors.aiPurple),
         title: const Text('Escolher a voz'),
-        subtitle: const Text('Padrão do Google (masculina); toque para ouvir as vozes do celular'),
+        subtitle: const Text(
+            'Padrão do Google (masculina); toque para ouvir as vozes do celular'),
         onTap: () => _choose(context),
       ),
       ValueListenableBuilder<double>(
@@ -613,24 +798,30 @@ class _VoiceSectionState extends State<VoiceSection> {
         builder: (context, rate, _) {
           final clamped = rate.clamp(0.75, 2.0);
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: KrezioSpace.lg, vertical: KrezioSpace.xs),
+            padding: const EdgeInsets.symmetric(
+                horizontal: KrezioSpace.lg, vertical: KrezioSpace.xs),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.speed_rounded, color: KrezioColors.aiPurple),
+                    const Icon(Icons.speed_rounded,
+                        color: KrezioColors.aiPurple),
                     const SizedBox(width: KrezioSpace.md),
                     Expanded(
                       child: Text(
                         'Velocidade de comunicação: ${rate.toStringAsFixed(2)}× (${VoiceSynthesisService.speedLabelOf(rate)})',
-                        style: const TextStyle(fontSize: KrezioFont.bodySmall, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                            fontSize: KrezioFont.bodySmall,
+                            fontWeight: FontWeight.w600),
                       ),
                     ),
                     IconButton(
                       tooltip: 'Ouvir velocidade',
-                      icon: const Icon(Icons.play_circle_outline, color: KrezioColors.emeraldGreen),
-                      onPressed: () => _synthesis.speak('Olá! Eu sou o César, falando na velocidade selecionada.'),
+                      icon: const Icon(Icons.play_circle_outline,
+                          color: KrezioColors.emeraldGreen),
+                      onPressed: () => _synthesis.speak(
+                          'Olá! Eu sou o César, falando na velocidade selecionada.'),
                     ),
                   ],
                 ),
@@ -652,9 +843,12 @@ class _VoiceSectionState extends State<VoiceSection> {
                   children: [
                     for (final preset in VoiceSynthesisService.speedPresets)
                       ChoiceChip(
-                        label: Text('${preset}×', style: const TextStyle(fontSize: KrezioFont.caption)),
+                        label: Text('${preset}×',
+                            style:
+                                const TextStyle(fontSize: KrezioFont.caption)),
                         selected: (rate - preset).abs() < 0.03,
-                        selectedColor: KrezioColors.aiPurple.withValues(alpha: 0.2),
+                        selectedColor:
+                            KrezioColors.aiPurple.withValues(alpha: 0.2),
                         onSelected: (_) async {
                           await _synthesis.setSpeechRate(preset);
                           if (mounted) setState(() {});
@@ -671,7 +865,8 @@ class _VoiceSectionState extends State<VoiceSection> {
       ValueListenableBuilder<bool>(
         valueListenable: _synthesis.onnxManager.useOnnxModelNotifier,
         builder: (context, useOnnx, _) => SwitchListTile(
-          secondary: const Icon(Icons.memory_outlined, color: KrezioColors.aiPurple),
+          secondary:
+              const Icon(Icons.memory_outlined, color: KrezioColors.aiPurple),
           title: const Text('Modelo On-Device Leve (Piper VITS INT8)'),
           subtitle: Text(
             useOnnx

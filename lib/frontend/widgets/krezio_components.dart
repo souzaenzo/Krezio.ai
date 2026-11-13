@@ -13,11 +13,41 @@ class KrezioPalette {
   factory KrezioPalette.of(BuildContext context) =>
       KrezioPalette._(Theme.of(context).brightness == Brightness.dark);
 
-  Color get background => isDark ? KrezioColors.darkBackground : KrezioColors.lightBackground;
-  Color get surface => isDark ? KrezioColors.darkSurface : KrezioColors.lightSurface;
-  Color get primaryText => isDark ? KrezioColors.darkPrimaryText : KrezioColors.lightPrimaryText;
-  Color get secondaryText => isDark ? KrezioColors.darkSecondaryText : KrezioColors.lightSecondaryText;
-  Color get border => isDark ? KrezioColors.darkBorder : KrezioColors.lightBorder;
+  Color get background =>
+      isDark ? KrezioColors.darkBackground : KrezioColors.lightBackground;
+  Color get surface =>
+      isDark ? KrezioColors.darkSurface : KrezioColors.lightSurface;
+  Color get surfaceVariant => isDark
+      ? KrezioColors.darkSurfaceVariant
+      : KrezioColors.lightSurfaceVariant;
+  Color get primaryText =>
+      isDark ? KrezioColors.darkPrimaryText : KrezioColors.lightPrimaryText;
+  Color get secondaryText =>
+      isDark ? KrezioColors.darkSecondaryText : KrezioColors.lightSecondaryText;
+  Color get border =>
+      isDark ? KrezioColors.darkBorder : KrezioColors.lightBorder;
+  Color get borderStrong =>
+      isDark ? KrezioColors.darkBorderStrong : KrezioColors.lightBorderStrong;
+  Color get accent =>
+      isDark ? KrezioColors.aiPurpleDark : KrezioColors.aiPurple;
+  Color get accentText =>
+      isDark ? KrezioColors.aiPurpleLight : KrezioColors.aiPurple;
+  Color get accentSoft =>
+      isDark ? KrezioColors.darkAccentSoft : KrezioColors.lightAccentSoft;
+  Color get accentBorder =>
+      isDark ? KrezioColors.darkAccentBorder : KrezioColors.lightAccentBorder;
+  Color get income =>
+      isDark ? KrezioColors.emeraldGreenLight : KrezioColors.emeraldGreen;
+  Color get attention =>
+      isDark ? KrezioColors.friendlyOrangeLight : KrezioColors.friendlyOrange;
+  Color get attentionSoft =>
+      isDark ? KrezioColors.darkAttentionSoft : KrezioColors.lightAttentionSoft;
+  Color get warning =>
+      isDark ? KrezioColors.darkWarning : KrezioColors.lightWarning;
+  Color get warningSoft =>
+      isDark ? KrezioColors.darkWarningSoft : KrezioColors.lightWarningSoft;
+  Color get progressTrack =>
+      isDark ? KrezioColors.darkTrack : KrezioColors.lightTrack;
 }
 
 // ── Buttons ─────────────────────────────────────────────────────────────────
@@ -62,41 +92,67 @@ class KrezioButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = KrezioPalette.of(context);
     final enabled = onPressed != null && !loading;
+    final danger = kind == KrezioButtonKind.danger;
+    final foreground = danger
+        ? palette.attention
+        : kind == KrezioButtonKind.secondary
+            ? palette.primaryText
+            : Colors.white;
     final child = loading
-        ? const SizedBox(
+        ? SizedBox(
             width: KrezioSpace.lg,
             height: KrezioSpace.lg,
-            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+            child: CircularProgressIndicator(strokeWidth: 2, color: foreground),
           )
         : Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (icon != null) ...[Icon(icon, size: KrezioFont.title), const SizedBox(width: KrezioSpace.sm)],
-              Text(label, style: const TextStyle(fontSize: KrezioFont.body, fontWeight: FontWeight.bold)),
+              if (icon != null) ...[
+                Icon(icon, size: KrezioFont.title),
+                const SizedBox(width: KrezioSpace.sm),
+              ],
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: KrezioFont.body,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           );
 
-    final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(KrezioSpace.md));
-    const padding = EdgeInsets.symmetric(horizontal: KrezioSpace.xl, vertical: KrezioSpace.md);
-    final Widget button = kind == KrezioButtonKind.secondary
+    const shape = RoundedRectangleBorder(borderRadius: KrezioTheme.inputRadius);
+    const padding = EdgeInsets.symmetric(
+      horizontal: KrezioSpace.lg,
+      vertical: KrezioSpace.md,
+    );
+    final minimumSize = Size(44, expand ? 52 : 44);
+    final Widget button = kind != KrezioButtonKind.primary
         ? OutlinedButton(
             onPressed: enabled ? onPressed : null,
             style: OutlinedButton.styleFrom(
-              foregroundColor: KrezioColors.aiPurple,
-              side: const BorderSide(color: KrezioColors.aiPurple),
+              foregroundColor: foreground,
+              backgroundColor: danger ? palette.attentionSoft : null,
+              side: BorderSide(
+                color: danger ? palette.attention : palette.borderStrong,
+              ),
               shape: shape,
               padding: padding,
+              minimumSize: minimumSize,
             ),
             child: child,
           )
         : ElevatedButton(
             onPressed: enabled ? onPressed : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: kind == KrezioButtonKind.danger ? KrezioColors.friendlyOrange : KrezioColors.aiPurple,
-              foregroundColor: Colors.white,
+              backgroundColor: palette.accent,
+              foregroundColor: foreground,
               shape: shape,
               padding: padding,
+              elevation: 0,
+              minimumSize: minimumSize,
             ),
             child: child,
           );
@@ -147,9 +203,15 @@ class KrezioTextField extends StatelessWidget {
       textInputAction: textInputAction ?? TextInputAction.done,
       textCapitalization: textCapitalization,
       onChanged: onChanged,
-      onSubmitted: onSubmitted ?? (formSubmit != null ? (_) => formSubmit() : null),
+      onSubmitted:
+          onSubmitted ?? (formSubmit != null ? (_) => formSubmit() : null),
       style: const TextStyle(fontSize: KrezioFont.bodyLarge),
-      decoration: InputDecoration(labelText: label, hintText: hint, errorText: errorText, suffixIcon: suffixIcon),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        errorText: errorText,
+        suffixIcon: suffixIcon,
+      ),
     );
   }
 }
@@ -188,7 +250,8 @@ class KrezioMoneyField extends StatelessWidget {
       autofocus: autofocus,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       textInputAction: textInputAction ?? TextInputAction.done,
-      onSubmitted: onSubmitted ?? (formSubmit != null ? (_) => formSubmit() : null),
+      onSubmitted:
+          onSubmitted ?? (formSubmit != null ? (_) => formSubmit() : null),
       inputFormatters: const [BrlCurrencyInputFormatter()],
       style: const TextStyle(fontSize: KrezioFont.bodyLarge),
       decoration: InputDecoration(
@@ -204,17 +267,17 @@ class KrezioMoneyField extends StatelessWidget {
 class _KrezioFormSubmitScope extends InheritedWidget {
   final VoidCallback onSubmit;
 
-  const _KrezioFormSubmitScope({
-    required this.onSubmit,
-    required super.child,
-  });
+  const _KrezioFormSubmitScope({required this.onSubmit, required super.child});
 
   static VoidCallback? maybeOf(BuildContext context) {
-    return context.dependOnInheritedWidgetOfExactType<_KrezioFormSubmitScope>()?.onSubmit;
+    return context
+        .dependOnInheritedWidgetOfExactType<_KrezioFormSubmitScope>()
+        ?.onSubmit;
   }
 
   @override
-  bool updateShouldNotify(_KrezioFormSubmitScope oldWidget) => onSubmit != oldWidget.onSubmit;
+  bool updateShouldNotify(_KrezioFormSubmitScope oldWidget) =>
+      onSubmit != oldWidget.onSubmit;
 }
 
 // ── Card ────────────────────────────────────────────────────────────────────
@@ -224,16 +287,27 @@ class KrezioCard extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final VoidCallback? onTap;
 
-  const KrezioCard({super.key, required this.child, this.padding = const EdgeInsets.all(KrezioSpace.lg), this.onTap});
+  const KrezioCard({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(KrezioSpace.lg),
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final p = KrezioPalette.of(context);
     return Material(
       color: p.surface,
-      shape: RoundedRectangleBorder(borderRadius: KrezioTheme.borderRadius, side: BorderSide(color: p.border)),
+      shape: RoundedRectangleBorder(
+        borderRadius: KrezioTheme.borderRadius,
+        side: BorderSide(color: p.border),
+      ),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(onTap: onTap, child: Padding(padding: padding, child: child)),
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(padding: padding, child: child),
+      ),
     );
   }
 }
@@ -253,20 +327,31 @@ Future<bool> showKrezioConfirmDialog(
     context: context,
     builder: (ctx) => CallbackShortcuts(
       bindings: {
-        const SingleActivator(LogicalKeyboardKey.enter): () => Navigator.of(ctx).pop(true),
-        const SingleActivator(LogicalKeyboardKey.numpadEnter): () => Navigator.of(ctx).pop(true),
+        const SingleActivator(LogicalKeyboardKey.enter): () =>
+            Navigator.of(ctx).pop(true),
+        const SingleActivator(LogicalKeyboardKey.numpadEnter): () =>
+            Navigator.of(ctx).pop(true),
       },
       child: Focus(
         autofocus: true,
         child: AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: KrezioTheme.borderRadius),
+          scrollable: true,
           title: Text(title),
           content: Text(message),
           actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(cancelLabel)),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(cancelLabel),
+            ),
             danger
-                ? KrezioButton.danger(label: confirmLabel, onPressed: () => Navigator.of(ctx).pop(true))
-                : KrezioButton(label: confirmLabel, onPressed: () => Navigator.of(ctx).pop(true)),
+                ? KrezioButton.danger(
+                    label: confirmLabel,
+                    onPressed: () => Navigator.of(ctx).pop(true),
+                  )
+                : KrezioButton(
+                    label: confirmLabel,
+                    onPressed: () => Navigator.of(ctx).pop(true),
+                  ),
           ],
         ),
       ),
@@ -275,8 +360,8 @@ Future<bool> showKrezioConfirmDialog(
   return result ?? false;
 }
 
-/// Small form in a dialog. [onConfirm] returns `true` when the input is valid
-/// and the dialog can close; returning `false` keeps it open.
+/// Small form in a bottom sheet. [onConfirm] returns `true` when the input
+/// is valid and the sheet can close.
 Future<void> showKrezioFormDialog(
   BuildContext context, {
   required String title,
@@ -284,8 +369,12 @@ Future<void> showKrezioFormDialog(
   required bool Function() onConfirm,
   String confirmLabel = 'Salvar',
 }) {
-  return showDialog<void>(
+  return showModalBottomSheet<void>(
     context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    showDragHandle: true,
+    constraints: const BoxConstraints(maxWidth: KrezioTheme.contentWidth),
     builder: (ctx) {
       void submit() {
         if (onConfirm()) Navigator.of(ctx).pop();
@@ -298,25 +387,51 @@ Future<void> showKrezioFormDialog(
         },
         child: _KrezioFormSubmitScope(
           onSubmit: submit,
-          child: AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: KrezioTheme.borderRadius),
-            title: Text(title),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (var i = 0; i < fields.length; i++) ...[
-                  if (i > 0) const SizedBox(height: KrezioSpace.md),
-                  fields[i],
-                ],
-              ],
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.viewInsetsOf(ctx).bottom,
             ),
-            actions: [
-              TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancelar')),
-              KrezioButton(
-                label: confirmLabel,
-                onPressed: submit,
+            child: SafeArea(
+              top: false,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: Theme.of(ctx).textTheme.titleLarge,
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Fechar',
+                          onPressed: () => Navigator.of(ctx).pop(),
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                      ],
+                    ),
+                    for (final field in fields) ...[
+                      const SizedBox(height: KrezioSpace.md),
+                      field,
+                    ],
+                    const SizedBox(height: KrezioSpace.lg),
+                    KrezioButton(
+                      label: confirmLabel,
+                      onPressed: submit,
+                      expand: true,
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: const Text('Cancelar'),
+                    ),
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
         ),
       );
@@ -353,19 +468,30 @@ class KrezioEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: compact ? 32 : 48, color: p.secondaryText.withValues(alpha: 0.6)),
+            Icon(
+              icon,
+              size: compact ? 32 : 48,
+              color: p.secondaryText.withValues(alpha: 0.6),
+            ),
             const SizedBox(height: KrezioSpace.md),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: KrezioFont.bodyLarge, fontWeight: FontWeight.bold, color: p.primaryText),
+              style: TextStyle(
+                fontSize: KrezioFont.bodyLarge,
+                fontWeight: FontWeight.bold,
+                color: p.primaryText,
+              ),
             ),
             if (message != null) ...[
               const SizedBox(height: KrezioSpace.sm),
               Text(
                 message!,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: KrezioFont.small, color: p.secondaryText),
+                style: TextStyle(
+                  fontSize: KrezioFont.small,
+                  color: p.secondaryText,
+                ),
               ),
             ],
             if (actionLabel != null && onAction != null) ...[
@@ -388,9 +514,12 @@ class KrezioSkeletonList extends StatefulWidget {
   State<KrezioSkeletonList> createState() => _KrezioSkeletonListState();
 }
 
-class _KrezioSkeletonListState extends State<KrezioSkeletonList> with SingleTickerProviderStateMixin {
-  late final AnimationController _pulse =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat(reverse: true);
+class _KrezioSkeletonListState extends State<KrezioSkeletonList>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..repeat(reverse: true);
 
   @override
   void dispose() {
@@ -404,7 +533,10 @@ class _KrezioSkeletonListState extends State<KrezioSkeletonList> with SingleTick
     Widget bar(double width, double height) => Container(
           width: width,
           height: height,
-          decoration: BoxDecoration(color: p.border, borderRadius: BorderRadius.circular(KrezioSpace.xs)),
+          decoration: BoxDecoration(
+            color: p.border,
+            borderRadius: BorderRadius.circular(KrezioSpace.xs),
+          ),
         );
     return FadeTransition(
       opacity: Tween(begin: 0.4, end: 1.0).animate(_pulse),
@@ -418,13 +550,20 @@ class _KrezioSkeletonListState extends State<KrezioSkeletonList> with SingleTick
             Container(
               width: 40,
               height: 40,
-              decoration: BoxDecoration(color: p.border, borderRadius: BorderRadius.circular(KrezioSpace.md)),
+              decoration: BoxDecoration(
+                color: p.border,
+                borderRadius: BorderRadius.circular(KrezioSpace.md),
+              ),
             ),
             const SizedBox(width: KrezioSpace.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [bar(160, KrezioSpace.md), const SizedBox(height: KrezioSpace.sm), bar(100, KrezioSpace.sm)],
+                children: [
+                  bar(160, KrezioSpace.md),
+                  const SizedBox(height: KrezioSpace.sm),
+                  bar(100, KrezioSpace.sm),
+                ],
               ),
             ),
             bar(60, KrezioSpace.md),
@@ -470,19 +609,33 @@ class KrezioSplash extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(KrezioSpace.xl),
-              decoration: BoxDecoration(color: KrezioColors.aiPurple.withValues(alpha: 0.15), shape: BoxShape.circle),
-              child: const Icon(Icons.auto_awesome, color: KrezioColors.aiPurple, size: 48),
+              decoration: BoxDecoration(
+                color: KrezioColors.aiPurple.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.auto_awesome,
+                color: KrezioColors.aiPurple,
+                size: 48,
+              ),
             ),
             const SizedBox(height: KrezioSpace.xxl),
             const Text(
               'Krezio.ai',
-              style: TextStyle(fontSize: KrezioFont.headline, fontWeight: FontWeight.bold, color: KrezioColors.aiPurple),
+              style: TextStyle(
+                fontSize: KrezioFont.headline,
+                fontWeight: FontWeight.bold,
+                color: KrezioColors.aiPurple,
+              ),
             ),
             const SizedBox(height: KrezioSpace.xxl),
             const SizedBox(
               width: KrezioSpace.xxl,
               height: KrezioSpace.xxl,
-              child: CircularProgressIndicator(strokeWidth: 2.5, color: KrezioColors.aiPurple),
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: KrezioColors.aiPurple,
+              ),
             ),
           ],
         ),
@@ -490,4 +643,3 @@ class KrezioSplash extends StatelessWidget {
     );
   }
 }
-

@@ -53,11 +53,18 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       builder: (dialog) => AlertDialog(
         title: const Text('Sair da conta?'),
-        content: const Text('Só esta conta pode reabrir uma cópia mantida no aparelho.'),
+        content: const Text(
+            'Só esta conta pode reabrir uma cópia mantida no aparelho.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialog), child: const Text('Cancelar')),
-          TextButton(onPressed: () => Navigator.pop(dialog, false), child: const Text('Remover deste aparelho')),
-          FilledButton(onPressed: () => Navigator.pop(dialog, true), child: const Text('Manter neste aparelho')),
+          TextButton(
+              onPressed: () => Navigator.pop(dialog),
+              child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(dialog, false),
+              child: const Text('Remover deste aparelho')),
+          FilledButton(
+              onPressed: () => Navigator.pop(dialog, true),
+              child: const Text('Manter neste aparelho')),
         ],
       ),
     );
@@ -70,11 +77,18 @@ class SettingsScreen extends StatelessWidget {
         context: context,
         builder: (dialog) => AlertDialog(
           title: const Text('Sincronização indisponível'),
-          content: const Text('Você pode tentar sincronizar ou sair mantendo a cópia neste aparelho.'),
+          content: const Text(
+              'Você pode tentar sincronizar ou sair mantendo a cópia neste aparelho.'),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialog), child: const Text('Cancelar')),
-            TextButton(onPressed: () => Navigator.pop(dialog, false), child: const Text('Sair e manter')),
-            FilledButton(onPressed: () => Navigator.pop(dialog, true), child: const Text('Tentar de novo')),
+            TextButton(
+                onPressed: () => Navigator.pop(dialog),
+                child: const Text('Cancelar')),
+            TextButton(
+                onPressed: () => Navigator.pop(dialog, false),
+                child: const Text('Sair e manter')),
+            FilledButton(
+                onPressed: () => Navigator.pop(dialog, true),
+                child: const Text('Tentar de novo')),
           ],
         ),
       );
@@ -93,35 +107,29 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
-  void _signOutError(BuildContext context) => ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('Não foi possível sair da conta.')),
-  );
+  void _signOutError(BuildContext context) =>
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível sair da conta.')),
+      );
 
   @override
   Widget build(BuildContext context) {
-    final bgSurface = isDark ? KrezioColors.darkSurface : KrezioColors.lightSurface;
-    final borderColor = isDark ? KrezioColors.darkBorder : KrezioColors.lightBorder;
-    final primaryTextColor = isDark ? KrezioColors.darkPrimaryText : KrezioColors.lightPrimaryText;
-    final secondaryTextColor = isDark ? KrezioColors.darkSecondaryText : KrezioColors.lightSecondaryText;
+    final palette = KrezioPalette.of(context);
+    final bgSurface = palette.surface;
+    final borderColor = palette.border;
+    final primaryTextColor = palette.primaryText;
+    final secondaryTextColor = palette.secondaryText;
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: isDark ? KrezioColors.darkBackground : KrezioColors.lightBackground,
-        elevation: 0,
-        title: Text(
-          'Configurações',
-          style: TextStyle(fontSize: KrezioFont.title, fontWeight: FontWeight.bold, color: primaryTextColor),
-        ),
-      ),
+      appBar: AppBar(title: const Text('Ajustes')),
       body: ListView(
-        padding: const EdgeInsets.all(KrezioSpace.lg),
+        primary: false,
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
         children: [
           ProfileSection(repository: repository),
           AppearanceSection(repository: repository),
-          NotificationsSection(repository: repository),
-          const VoiceSection(),
+          DisplayPrivacySection(repository: repository),
           if (!isDemo) ...[
-            SecuritySection(lock: PinLock(PrefsPinStore()), biometric: BiometricAuth()),
             PrivacySection(
               repository: repository,
               userEmail: userEmail,
@@ -129,83 +137,141 @@ class SettingsScreen extends StatelessWidget {
               onClearData: onClearData,
               onExportLegacy: onExportLegacy,
             ),
+          ],
+          const VoiceSection(),
+          NotificationsSection(repository: repository),
+          if (!isDemo) ...[
+            SecuritySection(
+                lock: PinLock(PrefsPinStore()), biometric: BiometricAuth()),
             ToolsSection(repository: repository),
           ],
           if (onExploreDemo != null)
-            ListTile(
-              leading: const Icon(Icons.science_outlined),
-              title: const Text('Explorar com exemplos'),
-              onTap: onExploreDemo,
-            ),
-
-          // Money: accounts and open bills/debtors
-          KrezioCard(
-            padding: EdgeInsets.zero,
-            child: Column(
+            SettingsGroup(
+              title: 'Exemplos',
               children: [
                 ListTile(
-                  leading: const Icon(Icons.account_balance_wallet_outlined, color: KrezioColors.aiPurple),
-                  title: const Text('Contas e carteiras'),
-                  subtitle: const Text('Saldo por conta e fatura do cartão'),
+                  title: const Text('Explorar com exemplos'),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => AccountsScreen(repository: repository, isDark: isDark)),
-                  ),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.receipt_long, color: KrezioColors.aiPurple),
-                  title: const Text('Lembretes e Contas a Receber'),
-                  subtitle: const Text('Contas em aberto e quem te deve'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => OpenItemsScreen(repository: repository, isDark: isDark)),
-                  ),
+                  onTap: onExploreDemo,
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: KrezioSpace.lg),
 
-          ListTile(
-            title: const Text('Versão do app'),
-            trailing: Text(AppVersion.label),
-            onTap: () async {
-              if (!EnvironmentConfig.registerEasterEggTap()) return;
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Row(
-                    children: [
-                      Icon(Icons.hub_outlined, color: KrezioColors.aiPurple),
-                      SizedBox(width: 8),
-                      Expanded(child: Text('Modo de Homologação')),
-                    ],
+          SettingsGroup(
+            title: 'Contas e lembretes',
+            children: [
+              ListTile(
+                title: const Text('Contas e carteiras'),
+                subtitle: const Text('Saldo por conta e fatura do cartão'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        AccountsScreen(repository: repository, isDark: isDark),
                   ),
-                  content: const Text(
-                    'Você ativou o easter egg de engenharia (5 cliques na versão do app)!\n\n'
-                    'Deseja habilitar o Modo de Homologação e o Visualizador da Rede Neural nesta sessão?',
+                ),
+              ),
+              ListTile(
+                title: const Text('Lembretes e Contas a Receber'),
+                subtitle: const Text('Contas em aberto e quem te deve'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        OpenItemsScreen(repository: repository, isDark: isDark),
                   ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      child: const Text('Cancelar'),
+                ),
+              ),
+            ],
+          ),
+
+          if (userEmail != null)
+            SettingsGroup(
+              title: 'Conta',
+              children: [
+                ListTile(
+                    title: Text(userEmail!),
+                    subtitle: const Text('Dados sincronizados nesta conta')),
+                ListTile(
+                  title: Text('Sair da Conta',
+                      style: TextStyle(color: palette.attention)),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap:
+                      onSignOut == null ? null : () => _confirmSignOut(context),
+                ),
+              ],
+            ),
+
+          SettingsGroup(
+            title: 'Sobre',
+            children: [
+              ListTile(
+                title: const Text('Krezio.ai'),
+                subtitle: Text(AppVersion.label),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () async {
+                  if (!EnvironmentConfig.registerEasterEggTap()) return;
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Row(
+                        children: [
+                          Icon(Icons.hub_outlined,
+                              color: KrezioColors.aiPurple),
+                          SizedBox(width: 8),
+                          Expanded(child: Text('Modo de Homologação')),
+                        ],
+                      ),
+                      content: const Text(
+                        'Você ativou o easter egg de engenharia (5 cliques na versão do app)!\n\n'
+                        'Deseja habilitar o Modo de Homologação e o Visualizador da Rede Neural nesta sessão?',
+                      ),
+                      actions: [
+                        TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Cancelar')),
+                        FilledButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text('Ativar Homologação'),
+                        ),
+                      ],
                     ),
-                    FilledButton(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      child: const Text('Ativar Homologação'),
+                  );
+                  if (confirm != true || !context.mounted) return;
+                  EnvironmentConfig.setEnvironment(AppEnvironment.homologation);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text(
+                            'Modo de Homologação ativado com sucesso! 🧠')),
+                  );
+                },
+              ),
+              Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Privacidade e César',
+                      style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: primaryTextColor),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      userEmail != null
+                          ? 'O César interpreta comandos no aparelho. A fala usa os recursos da plataforma. Os lançamentos são sincronizados com a sua conta.'
+                          : 'O César interpreta comandos no aparelho. A fala usa os recursos da plataforma. Os lançamentos ficam neste aparelho.',
+                      style: TextStyle(
+                          fontSize: 13, height: 1.4, color: secondaryTextColor),
                     ),
                   ],
                 ),
-              );
-              if (confirm != true || !context.mounted) return;
-              EnvironmentConfig.setEnvironment(AppEnvironment.homologation);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Modo de Homologação ativado com sucesso! 🧠')),
-              );
-            },
+              ),
+            ],
           ),
           // Homologation & Neural Inspector Card
           ValueListenableBuilder<AppEnvironment>(
@@ -220,7 +286,9 @@ class SettingsScreen extends StatelessWidget {
                   color: bgSurface,
                   borderRadius: KrezioTheme.borderRadius,
                   border: Border.all(
-                    color: isHomolog ? KrezioColors.aiPurple.withOpacity(0.5) : borderColor,
+                    color: isHomolog
+                        ? KrezioColors.aiPurple.withOpacity(0.5)
+                        : borderColor,
                     width: isHomolog ? 1.5 : 1.0,
                   ),
                 ),
@@ -231,7 +299,9 @@ class SettingsScreen extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.hub_outlined,
-                          color: isHomolog ? KrezioColors.aiPurple : secondaryTextColor,
+                          color: isHomolog
+                              ? KrezioColors.aiPurple
+                              : secondaryTextColor,
                         ),
                         const SizedBox(width: KrezioSpace.md),
                         Expanded(
@@ -252,7 +322,9 @@ class SettingsScreen extends StatelessWidget {
                                     : 'Ambiente de Produção Padrão',
                                 style: TextStyle(
                                   fontSize: KrezioFont.small,
-                                  color: isHomolog ? KrezioColors.aiPurple : secondaryTextColor,
+                                  color: isHomolog
+                                      ? KrezioColors.aiPurple
+                                      : secondaryTextColor,
                                 ),
                               ),
                             ],
@@ -261,7 +333,8 @@ class SettingsScreen extends StatelessWidget {
                         Switch(
                           value: isHomolog,
                           activeColor: KrezioColors.aiPurple,
-                          onChanged: (_) => EnvironmentConfig.toggleEnvironment(),
+                          onChanged: (_) =>
+                              EnvironmentConfig.toggleEnvironment(),
                         ),
                       ],
                     ),
@@ -271,7 +344,10 @@ class SettingsScreen extends StatelessWidget {
                       const SizedBox(height: KrezioSpace.md),
                       Text(
                         'Ativa o Inspetor XAI de Pipeline NLP on-device: atribuição de pesos TF-IDF, calibração Softmax, diff de regras e benchmark.',
-                        style: TextStyle(fontSize: KrezioFont.small, color: secondaryTextColor, height: 1.35),
+                        style: TextStyle(
+                            fontSize: KrezioFont.small,
+                            color: secondaryTextColor,
+                            height: 1.35),
                       ),
                       const SizedBox(height: KrezioSpace.md),
                       if (engine != null)
@@ -280,12 +356,13 @@ class SettingsScreen extends StatelessWidget {
                           child: ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: KrezioColors.aiPurple,
-                              padding: const EdgeInsets.symmetric(vertical: KrezioSpace.md),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: KrezioSpace.md),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                                  borderRadius: BorderRadius.circular(12)),
                             ),
-                            icon: const Icon(Icons.hub, color: Colors.white, size: 18),
+                            icon: const Icon(Icons.hub,
+                                color: Colors.white, size: 18),
                             label: const Text(
                               'Abrir Inspetor NLP & XAI 🧠',
                               style: TextStyle(
@@ -299,9 +376,7 @@ class SettingsScreen extends StatelessWidget {
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => NeuralInspectorScreen(
-                                    engine: engine!,
-                                    isDark: isDark,
-                                  ),
+                                      engine: engine!, isDark: isDark),
                                 ),
                               );
                             },
@@ -313,68 +388,6 @@ class SettingsScreen extends StatelessWidget {
               );
             },
           ),
-          const SizedBox(height: KrezioSpace.lg),
-
-          // Privacy & AI Info Card
-          KrezioCard(
-            padding: const EdgeInsets.all(KrezioSpace.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.security, color: KrezioColors.emeraldGreen, size: 20),
-                    const SizedBox(width: KrezioSpace.sm),
-                    Text(
-                      'Privacidade e César',
-                      style: TextStyle(fontSize: KrezioFont.body, fontWeight: FontWeight.bold, color: primaryTextColor),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: KrezioSpace.sm),
-                Text(
-                  userEmail != null
-                      ? 'O César interpreta comandos no aparelho. A fala usa os recursos da plataforma. Os lançamentos são sincronizados com a sua conta.'
-                      : 'O César interpreta comandos no aparelho. A fala usa os recursos da plataforma. Os lançamentos ficam neste aparelho.',
-                  style: TextStyle(fontSize: KrezioFont.small, height: 1.4, color: secondaryTextColor),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: KrezioSpace.lg),
-
-          if (userEmail != null) ...[
-            KrezioCard(
-              padding: const EdgeInsets.all(KrezioSpace.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Conta',
-                    style: TextStyle(fontSize: KrezioFont.body, fontWeight: FontWeight.bold, color: primaryTextColor),
-                  ),
-                  const SizedBox(height: KrezioSpace.md),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.account_circle_outlined, color: KrezioColors.aiPurple),
-                    title: Text(userEmail!, style: TextStyle(fontSize: KrezioFont.bodySmall, color: primaryTextColor)),
-                    subtitle: Text('Dados sincronizados nesta conta', style: TextStyle(fontSize: KrezioFont.caption, color: secondaryTextColor)),
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.logout, color: KrezioColors.friendlyOrange),
-                    title: const Text('Sair da Conta', style: TextStyle(fontSize: KrezioFont.bodySmall, color: KrezioColors.friendlyOrange)),
-                    onTap: onSignOut == null
-                        ? null
-                        : () => _confirmSignOut(context),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: KrezioSpace.lg),
-          ],
-
         ],
       ),
     );

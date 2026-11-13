@@ -1,96 +1,71 @@
 import 'package:flutter/material.dart';
-import '../../../../theme/krezio_theme.dart';
+
+import '../../../../widgets/krezio_components.dart';
 
 class AiInsightCard extends StatelessWidget {
   final String insightText;
-  final bool isDark;
   final VoidCallback? onAskAi;
 
-  const AiInsightCard({
-    super.key,
-    required this.insightText,
-    required this.isDark,
-    this.onAskAi,
-  });
+  const AiInsightCard({super.key, required this.insightText, this.onAskAi});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(KrezioSpace.lg),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [const Color(0xFF2E1065), const Color(0xFF1E1B4B)]
-              : [const Color(0xFFF3E8FF), const Color(0xFFEDE9FE)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: KrezioTheme.borderRadius,
-        border: Border.all(
-          color: KrezioColors.aiPurple.withOpacity(0.35),
-          width: 1.2,
-        ),
+    final p = KrezioPalette.of(context);
+    return Material(
+      color: p.accentSoft,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: p.accentBorder),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(KrezioSpace.sm),
-                decoration: BoxDecoration(
-                  color: KrezioColors.aiPurple.withOpacity(0.25),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.auto_awesome,
-                  color: KrezioColors.aiPurple,
-                  size: 16,
-                ),
-              ),
-              const SizedBox(width: KrezioSpace.sm),
-              Expanded(
-                child: Text(
-                  'Insight do Krezio.ai',
-                  style: TextStyle(
-                    fontSize: KrezioFont.bodySmall,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : const Color(0xFF5B21B6),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: KrezioSpace.md),
-          Text(
-            insightText,
-            style: TextStyle(
-              fontSize: KrezioFont.bodySmall,
-              height: 1.4,
-              color: isDark ? const Color(0xFFE9D5FF) : const Color(0xFF4C1D95),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              radius: 17,
+              backgroundColor: p.accent,
+              foregroundColor: Colors.white,
+              child: const Icon(Icons.auto_awesome_outlined, size: 18),
             ),
-          ),
-          if (onAskAi != null) ...[
-            const SizedBox(height: KrezioSpace.md),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: onAskAi,
-                icon: const Icon(Icons.chat_bubble_outline, size: 14, color: KrezioColors.aiPurple),
-                label: const Text(
-                  'Conversar com a IA',
-                  style: TextStyle(fontSize: KrezioFont.small, fontWeight: FontWeight.bold, color: KrezioColors.aiPurple),
-                ),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: KrezioSpace.md, vertical: KrezioSpace.xs),
-                  backgroundColor: isDark ? Colors.black26 : Colors.white60,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        const TextSpan(
+                          text: 'César: ',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        TextSpan(text: insightText),
+                      ],
+                    ),
+                    style: TextStyle(
+                      fontSize: 15,
+                      height: 1.45,
+                      color: p.primaryText,
+                    ),
+                  ),
+                  if (onAskAi != null) ...[
+                    const SizedBox(height: 8),
+                    OutlinedButton(
+                      onPressed: onAskAi,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: p.accentText,
+                        side: BorderSide(color: p.accentBorder),
+                        shape: const StadiumBorder(),
+                      ),
+                      child: const Text('Conversar com o César'),
+                    ),
+                  ],
+                ],
               ),
             ),
           ],
-        ],
+        ),
       ),
     );
   }
