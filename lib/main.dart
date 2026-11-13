@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -31,6 +32,16 @@ import 'frontend/features/home_widget/home_widget_sync.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  LicenseRegistry.addLicense(() async* {
+    yield LicenseEntryWithLineBreaks(
+      const ['Manrope'],
+      await rootBundle.loadString('assets/fonts/OFL-Manrope.txt'),
+    );
+    yield LicenseEntryWithLineBreaks(
+      const ['Bricolage Grotesque'],
+      await rootBundle.loadString('assets/fonts/OFL-BricolageGrotesque.txt'),
+    );
+  });
   runApp(const KrezioApp());
 }
 
@@ -43,7 +54,8 @@ class KrezioApp extends StatefulWidget {
 
 class _KrezioAppState extends State<KrezioApp> with WidgetsBindingObserver {
   ThemeMode get _themeMode => ThemeController.mode.value;
-  bool get _isDark => ThemeController.isDark(_themeMode, WidgetsBinding.instance.platformDispatcher.platformBrightness);
+  bool get _isDark => ThemeController.isDark(_themeMode,
+      WidgetsBinding.instance.platformDispatcher.platformBrightness);
   final PinLock _pinLock = PinLock(PrefsPinStore());
   final BiometricAuth _biometric = BiometricAuth();
   bool _onboardingDone = true;
@@ -63,7 +75,8 @@ class _KrezioAppState extends State<KrezioApp> with WidgetsBindingObserver {
   String? _errorMessage;
 
   // Deep link: the route the app was opened at (web `/#/chat`, Android intent).
-  final int _initialTab = KrezioRoutes.tabFor(WidgetsBinding.instance.platformDispatcher.defaultRouteName);
+  final int _initialTab = KrezioRoutes.tabFor(
+      WidgetsBinding.instance.platformDispatcher.defaultRouteName);
 
   // Login is only required once Firebase has real credentials (see
   // firebase_options.dart). Until `flutterfire configure` has run, the app
@@ -79,7 +92,8 @@ class _KrezioAppState extends State<KrezioApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     ThemeController.mode.addListener(_onThemeChanged);
     // Opened by a link ("krezio://app/chat?frase=…", a shortcut, the widget).
-    final start = Uri.tryParse(WidgetsBinding.instance.platformDispatcher.defaultRouteName);
+    final start = Uri.tryParse(
+        WidgetsBinding.instance.platformDispatcher.defaultRouteName);
     if (start != null && start.hasQuery) KrezioRoutes.pendingLink.value = start;
     if (HomeWidgetSync.supported) {
       HomeWidget.initiallyLaunchedFromHomeWidget().then((u) {
@@ -95,7 +109,8 @@ class _KrezioAppState extends State<KrezioApp> with WidgetsBindingObserver {
 
   Future<void> _loadNlpEngine() async {
     try {
-      final jsonStr = await rootBundle.loadString('models/on_device/krezio_nlp_model.json');
+      final jsonStr =
+          await rootBundle.loadString('models/on_device/krezio_nlp_model.json');
       final engine = LocalFinancialNlpEngine.fromJsonString(jsonStr);
       if (!mounted) return;
       setState(() {
@@ -116,8 +131,10 @@ class _KrezioAppState extends State<KrezioApp> with WidgetsBindingObserver {
       const localOnly = bool.fromEnvironment('KREZIO_LOCAL_ONLY');
       if (!localOnly && DefaultFirebaseOptions.isConfigured) {
         try {
-          await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-          FirebaseFirestore.instance.settings = const Settings(persistenceEnabled: true);
+          await Firebase.initializeApp(
+              options: DefaultFirebaseOptions.currentPlatform);
+          FirebaseFirestore.instance.settings =
+              const Settings(persistenceEnabled: true);
           _authService = AuthService();
           _firebaseReady = true;
         } catch (e) {
@@ -131,19 +148,25 @@ class _KrezioAppState extends State<KrezioApp> with WidgetsBindingObserver {
         _queueSession(null);
       }
     } catch (_) {
-      if (mounted) setState(() => _sessionError = 'Não foi possível abrir os dados locais.');
+      if (mounted)
+        setState(
+            () => _sessionError = 'Não foi possível abrir os dados locais.');
     }
   }
 
   void _queueSession(User? user) {
-    _authQueue = _authQueue.then((_) => _openSession(user)).catchError((Object error) {
+    _authQueue =
+        _authQueue.then((_) => _openSession(user)).catchError((Object error) {
       debugPrint('[Sessão] $error');
-      if (mounted) setState(() => _sessionError = 'Não foi possível abrir esta sessão.');
+      if (mounted)
+        setState(() => _sessionError = 'Não foi possível abrir esta sessão.');
     });
   }
 
   Future<void> _openSession(User? user) async {
-    if (!mounted || (_hasSession && _currentUser?.uid == user?.uid && _isRepositoryReady)) return;
+    if (!mounted ||
+        (_hasSession && _currentUser?.uid == user?.uid && _isRepositoryReady))
+      return;
     if (_hasSession) {
       KrezioRoutes.pendingLink.value = null;
       _navigator.currentState?.popUntil((route) => route.isFirst);
@@ -161,12 +184,15 @@ class _KrezioAppState extends State<KrezioApp> with WidgetsBindingObserver {
     await oldSync?.drain();
     await oldRepo?.flushPendingWrites();
     await HomeWidgetSync.clear();
-    if (!mounted || (_firebaseReady && _authService?.currentUser?.uid != user?.uid)) return;
+    if (!mounted ||
+        (_firebaseReady && _authService?.currentUser?.uid != user?.uid)) return;
 
     FinancialRepository? repository;
     CloudSyncService? sync;
     if (!_firebaseReady || user != null) {
-      final store = user == null ? const PersistenceService.local() : PersistenceService.account(user.uid);
+      final store = user == null
+          ? const PersistenceService.local()
+          : PersistenceService.account(user.uid);
       repository = FinancialRepository(persistence: store, seedDemo: false);
       await repository.initialize();
     }
@@ -178,26 +204,30 @@ class _KrezioAppState extends State<KrezioApp> with WidgetsBindingObserver {
         debugPrint('[CloudSync] Conta aberta com a cópia local: $e');
       }
     }
-    if (!mounted || (_firebaseReady && _authService?.currentUser?.uid != user?.uid)) {
+    if (!mounted ||
+        (_firebaseReady && _authService?.currentUser?.uid != user?.uid)) {
       sync?.dispose();
       return;
     }
 
     _cloudSync = sync;
     sync?.startAutoSync();
-    ThemeController.mode.value = ThemeController.parse(repository?.preference(ThemeController.pref));
+    ThemeController.mode.value =
+        ThemeController.parse(repository?.preference(ThemeController.pref));
     if (repository != null) _widgetSync = HomeWidgetSync(repository)..start();
     setState(() {
       _repository = repository;
       _demo = null;
       _currentUser = user;
       _hasSession = true;
-      _onboardingDone = repository?.preference(OnboardingScreen.donePref) != null;
+      _onboardingDone =
+          repository?.preference(OnboardingScreen.donePref) != null;
       _isRepositoryReady = true;
     });
   }
 
-  Future<void> _signOut({required bool keepData, required bool skipSync}) async {
+  Future<void> _signOut(
+      {required bool keepData, required bool skipSync}) async {
     final uid = _currentUser!.uid;
     final repository = _repository!;
     final sync = _cloudSync;
@@ -251,7 +281,8 @@ class _KrezioAppState extends State<KrezioApp> with WidgetsBindingObserver {
       } else {
         await repository.clearAllData();
       }
-      repository.setPreference(OnboardingScreen.donePref, DateTime.now().toIso8601String());
+      repository.setPreference(
+          OnboardingScreen.donePref, DateTime.now().toIso8601String());
       await repository.flushPendingWrites();
     } finally {
       if (mounted) setState(() => _sessionBusy = false);
@@ -259,10 +290,12 @@ class _KrezioAppState extends State<KrezioApp> with WidgetsBindingObserver {
   }
 
   Future<void> _exportLegacy() async {
-    final recovery = FinancialRepository(persistence: const PersistenceService(), seedDemo: false);
+    final recovery = FinancialRepository(
+        persistence: const PersistenceService(), seedDemo: false);
     try {
       await recovery.initialize();
-      final bytes = Uint8List.fromList(utf8.encode(DataExport.toJson(recovery)));
+      final bytes =
+          Uint8List.fromList(utf8.encode(DataExport.toJson(recovery)));
       await SharePlus.instance.share(ShareParams(
         files: [XFile.fromData(bytes, mimeType: 'application/json')],
         fileNameOverrides: ['krezio-recuperacao.json'],
@@ -282,7 +315,8 @@ class _KrezioAppState extends State<KrezioApp> with WidgetsBindingObserver {
   void _toggleTheme() {
     final next = _isDark ? ThemeMode.light : ThemeMode.dark;
     ThemeController.mode.value = next;
-    (_demo ?? _repository)?.setPreference(ThemeController.pref, ThemeController.nameOf(next));
+    (_demo ?? _repository)
+        ?.setPreference(ThemeController.pref, ThemeController.nameOf(next));
   }
 
   void _onThemeChanged() {
@@ -292,7 +326,8 @@ class _KrezioAppState extends State<KrezioApp> with WidgetsBindingObserver {
   /// A link received while the app is open: handled here (switch tab, send
   /// the sentence) instead of pushing a named route that doesn't exist.
   @override
-  Future<bool> didPushRouteInformation(RouteInformation routeInformation) async {
+  Future<bool> didPushRouteInformation(
+      RouteInformation routeInformation) async {
     KrezioRoutes.pendingLink.value = KrezioRoutes.asRoute(routeInformation.uri);
     return true;
   }
@@ -344,7 +379,8 @@ class _KrezioAppState extends State<KrezioApp> with WidgetsBindingObserver {
     }
 
     if (_sessionError case final error?) {
-      return Scaffold(body: KrezioErrorState(
+      return Scaffold(
+          body: KrezioErrorState(
         message: error,
         onRetry: () {
           setState(() => _sessionError = null);
@@ -368,14 +404,16 @@ class _KrezioAppState extends State<KrezioApp> with WidgetsBindingObserver {
           final uid = _authService?.currentUser?.uid;
           unawaited(_authQueue.then((_) {
             if (uid != null && _currentUser?.uid == uid) {
-              _repository?.setPreference(LegalDocuments.acceptedPref, LegalDocuments.acceptedValue(DateTime.now()));
+              _repository?.setPreference(LegalDocuments.acceptedPref,
+                  LegalDocuments.acceptedValue(DateTime.now()));
             }
           }));
         },
         onExportLegacy: _hasLegacyData ? _exportLegacy : null,
       );
       return _hasLegacyData
-          ? AppLockGate(lock: _pinLock, biometric: _biometric.authenticate, child: login)
+          ? AppLockGate(
+              lock: _pinLock, biometric: _biometric.authenticate, child: login)
           : login;
     }
 
@@ -384,26 +422,32 @@ class _KrezioAppState extends State<KrezioApp> with WidgetsBindingObserver {
       key: ObjectKey(repository),
       lock: _pinLock,
       biometric: _biometric.authenticate,
-      child: !_onboardingDone ? OnboardingScreen(
-        repository: repository,
-        onDone: _finishOnboarding,
-        onExploreDemo: () => _finishOnboarding(demo: true),
-      ) : MainNavigationWrapper(
-        engine: _engine!,
-        repository: repository,
-        onToggleTheme: _toggleTheme,
-        isDark: _isDark,
-        userEmail: _currentUser?.email,
-        onSignOut: (_firebaseReady && _currentUser != null) ? _signOut : null,
-        onDeleteAccount: (_firebaseReady && _currentUser != null) ? _deleteAccount : null,
-        onClearData: _clearData,
-        onExportLegacy: !_firebaseReady && _hasLegacyData ? _exportLegacy : null,
-        onToggleDemo: () => setState(() {
-          _demo = _demo == null ? FinancialRepository.demo() : null;
-        }),
-        isDemo: _demo != null,
-        initialIndex: _initialTab,
-      ),
+      child: !_onboardingDone
+          ? OnboardingScreen(
+              repository: repository,
+              onDone: _finishOnboarding,
+              onExploreDemo: () => _finishOnboarding(demo: true),
+            )
+          : MainNavigationWrapper(
+              engine: _engine!,
+              repository: repository,
+              onToggleTheme: _toggleTheme,
+              isDark: _isDark,
+              userEmail: _currentUser?.email,
+              onSignOut:
+                  (_firebaseReady && _currentUser != null) ? _signOut : null,
+              onDeleteAccount: (_firebaseReady && _currentUser != null)
+                  ? _deleteAccount
+                  : null,
+              onClearData: _clearData,
+              onExportLegacy:
+                  !_firebaseReady && _hasLegacyData ? _exportLegacy : null,
+              onToggleDemo: () => setState(() {
+                _demo = _demo == null ? FinancialRepository.demo() : null;
+              }),
+              isDemo: _demo != null,
+              initialIndex: _initialTab,
+            ),
     );
   }
 }

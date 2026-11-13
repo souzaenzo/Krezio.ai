@@ -13,22 +13,21 @@ enum BudgetStatusFilter { all, ok, warning, over }
 /// Sort order of the budgets list.
 enum BudgetSort { usage, name, limit }
 
-/// Orçamentos (monthly limits per category). Lives inside the Lançamentos
-/// tab, separate from the Cofrinhos.
+/// Monthly category limits for Planejar and the Extrato shortcut.
 class BudgetsView extends StatefulWidget {
   final FinancialRepository repository;
   final bool isDark;
   final String? focusedCategory;
 
-  const BudgetsView({
-    super.key,
-    required this.repository,
-    required this.isDark,
-    this.focusedCategory,
-  });
+  const BudgetsView(
+      {super.key,
+      required this.repository,
+      required this.isDark,
+      this.focusedCategory});
 
   /// "Nova Categoria" dialog, also used by the Lançamentos app bar.
-  static void showAddCategoryDialog(BuildContext context, FinancialRepository repository) {
+  static void showAddCategoryDialog(
+      BuildContext context, FinancialRepository repository) {
     final nameController = TextEditingController();
     final limitController = TextEditingController();
     showKrezioFormDialog(
@@ -36,7 +35,10 @@ class BudgetsView extends StatefulWidget {
       title: 'Nova Categoria',
       confirmLabel: 'Criar',
       fields: [
-        KrezioTextField(controller: nameController, label: 'Nome (ex: Pets, Presentes)', autofocus: true),
+        KrezioTextField(
+            controller: nameController,
+            label: 'Nome (ex: Pets, Presentes)',
+            autofocus: true),
         KrezioMoneyField(controller: limitController, label: 'Limite mensal'),
       ],
       onConfirm: () {
@@ -45,9 +47,10 @@ class BudgetsView extends StatefulWidget {
         if (name.isEmpty || limit == null) return false;
         final existing = repository.existingCategoryNamed(name);
         if (existing != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Essa categoria já existe: ${existing.name}')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(
+              content: Text('Essa categoria já existe: ${existing.name}')));
           return false;
         }
         repository.addBudgetCategory(name, limit);
@@ -65,12 +68,11 @@ class _BudgetsViewState extends State<BudgetsView> {
   BudgetSort _sort = BudgetSort.usage;
 
   FinancialRepository get repository => widget.repository;
-  bool get isDark => widget.isDark;
-
-  static Color _levelColor(BudgetLevel level) => switch (level) {
-        BudgetLevel.ok => KrezioColors.budgetOk,
-        BudgetLevel.warning => KrezioColors.budgetWarning,
-        BudgetLevel.over => KrezioColors.budgetOver,
+  static Color _levelColor(BudgetLevel level, KrezioPalette palette) =>
+      switch (level) {
+        BudgetLevel.ok => palette.income,
+        BudgetLevel.warning => palette.warning,
+        BudgetLevel.over => palette.attention,
       };
 
   bool _matches(BudgetCategory b) => switch (_status) {
@@ -87,7 +89,8 @@ class _BudgetsViewState extends State<BudgetsView> {
         list.sort((a, b) => b.percentage.compareTo(a.percentage));
         break;
       case BudgetSort.name:
-        list.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+        list.sort(
+            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
         break;
       case BudgetSort.limit:
         list.sort((a, b) => b.monthlyLimit.compareTo(a.monthlyLimit));
@@ -108,259 +111,369 @@ class _BudgetsViewState extends State<BudgetsView> {
     final budgets = _visibleBudgets();
     final totalBudget = all.fold(0.0, (acc, b) => acc + b.monthlyLimit);
     final totalSpent = all.fold(0.0, (acc, b) => acc + b.currentSpent);
-    final overallProgress = totalBudget > 0 ? (totalSpent / totalBudget).clamp(0.0, 1.0) : 0.0;
+    final overallProgress = totalBudget > 0 ? totalSpent / totalBudget : 0.0;
+    final overallLevel = overallProgress >= 1
+        ? BudgetLevel.over
+        : overallProgress >= 0.8
+            ? BudgetLevel.warning
+            : BudgetLevel.ok;
+    final now = DateTime.now();
+    final days = DateUtils.getDaysInMonth(now.year, now.month);
+    final pace = now.day / days;
 
-    final primaryTextColor = isDark ? KrezioColors.darkPrimaryText : KrezioColors.lightPrimaryText;
-    final secondaryTextColor = isDark ? KrezioColors.darkSecondaryText : KrezioColors.lightSecondaryText;
+    final palette = KrezioPalette.of(context);
 
     int count(BudgetLevel l) => all.where((b) => b.level == l).length;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(KrezioSpace.lg, KrezioSpace.sm, KrezioSpace.lg, 96),
+      primary: false,
+      padding: const EdgeInsets.fromLTRB(
+          KrezioSpace.lg, KrezioSpace.sm, KrezioSpace.lg, 96),
       children: [
-        // Overall Monthly Budget Hero Card
-        KrezioCard(
-          padding: const EdgeInsets.all(KrezioSpace.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Teto de Gastos Mensal',
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: KrezioFont.bodySmall, fontWeight: FontWeight.w600, color: secondaryTextColor),
+        if (all.isEmpty)
+          KrezioCard(
+            padding: EdgeInsets.zero,
+            child: KrezioEmptyState(
+              icon: Icons.track_changes,
+              title: 'Nenhum orçamento ainda',
+              message: 'Defina um limite mensal para cada categoria de gasto.',
+              actionLabel: 'Criar orçamento',
+              onAction: () =>
+                  BudgetsView.showAddCategoryDialog(context, repository),
+            ),
+          )
+        else ...[
+          // Overall Monthly Budget Hero Card
+          KrezioCard(
+            padding: const EdgeInsets.all(KrezioSpace.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Teto de Gastos Mensal',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: KrezioFont.bodySmall,
+                          fontWeight: FontWeight.w700,
+                          color: palette.secondaryText,
+                        ),
+                      ),
                     ),
+                    const SizedBox(width: KrezioSpace.sm),
+                    Text(
+                      'Dia ${now.day} de $days',
+                      style: TextStyle(
+                          fontSize: KrezioFont.small,
+                          color: palette.secondaryText),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: KrezioSpace.md),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: Money.brl(totalSpent),
+                        style: TextStyle(
+                          fontFamily: KrezioTheme.displayFamily,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: palette.primaryText,
+                        ),
+                      ),
+                      TextSpan(text: '  de ${Money.brl(totalBudget)}'),
+                    ],
                   ),
-                  const SizedBox(width: KrezioSpace.sm),
-                  Text(
-                    '${(overallProgress * 100).toStringAsFixed(0)}% Utilizado',
-                    style: const TextStyle(fontSize: KrezioFont.small, fontWeight: FontWeight.bold, color: KrezioColors.aiPurple),
+                  style: TextStyle(fontSize: 13, color: palette.secondaryText),
+                ),
+                const SizedBox(height: KrezioSpace.md),
+                _progressBar(overallProgress, pace, overallLevel, palette,
+                    height: 8),
+              ],
+            ),
+          ),
+          const SizedBox(height: KrezioSpace.md),
+          Wrap(
+            spacing: 12,
+            runSpacing: 6,
+            children: [
+              _legendItem('Ritmo ideal hoje', palette.secondaryText, palette,
+                  marker: true),
+              _legendItem('Até 79%', palette.income, palette),
+              _legendItem('80 a 99%', palette.warning, palette),
+              _legendItem('No limite ou acima', palette.attention, palette),
+            ],
+          ),
+          const SizedBox(height: KrezioSpace.lg),
+
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Limites por Categoria',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: KrezioTheme.displayFamily,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: palette.primaryText,
                   ),
-                ],
+                ),
               ),
-              const SizedBox(height: KrezioSpace.md),
-              Wrap(
-                crossAxisAlignment: WrapCrossAlignment.end,
-                children: [
-                  Text(
-                    Money.brl(totalSpent),
-                    style: TextStyle(fontSize: KrezioFont.headline, fontWeight: FontWeight.bold, color: primaryTextColor),
-                  ),
-                  Text(
-                    ' / ${Money.brl(totalBudget)}',
-                    style: TextStyle(fontSize: KrezioFont.body, color: secondaryTextColor),
-                  ),
+              const SizedBox(width: KrezioSpace.sm),
+              PopupMenuButton<BudgetSort>(
+                tooltip: 'Ordenar',
+                initialValue: _sort,
+                onSelected: (s) => setState(() => _sort = s),
+                itemBuilder: (_) => const [
+                  PopupMenuItem(
+                      value: BudgetSort.usage,
+                      child: Text('Mais usados primeiro')),
+                  PopupMenuItem(
+                      value: BudgetSort.name, child: Text('Nome (A–Z)')),
+                  PopupMenuItem(
+                      value: BudgetSort.limit, child: Text('Maior limite')),
                 ],
-              ),
-              const SizedBox(height: KrezioSpace.md),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(
-                  value: overallProgress,
-                  minHeight: 10,
-                  backgroundColor: isDark ? KrezioColors.darkBackground : const Color(0xFFE5E7EB),
-                  valueColor: AlwaysStoppedAnimation<Color>(_levelColor(
-                    overallProgress >= 1 ? BudgetLevel.over : (overallProgress >= 0.8 ? BudgetLevel.warning : BudgetLevel.ok),
-                  )),
+                child: SizedBox(
+                  height: 44,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.sort, size: 18, color: palette.secondaryText),
+                      const SizedBox(width: 4),
+                      Text(
+                          switch (_sort) {
+                            BudgetSort.usage => 'Uso',
+                            BudgetSort.name => 'Nome',
+                            BudgetSort.limit => 'Limite',
+                          },
+                          style: TextStyle(
+                              fontSize: KrezioFont.small,
+                              color: palette.secondaryText)),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
-        ),
-        const SizedBox(height: KrezioSpace.lg),
+          const SizedBox(height: KrezioSpace.sm),
+          Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            children: [
+              _statusTile(BudgetStatusFilter.all, 'Todos', all.length, palette),
+              _statusTile(BudgetStatusFilter.ok, 'No controle',
+                  count(BudgetLevel.ok), palette),
+              _statusTile(BudgetStatusFilter.warning, 'Atenção',
+                  count(BudgetLevel.warning), palette),
+              _statusTile(BudgetStatusFilter.over, 'Estourados',
+                  count(BudgetLevel.over), palette),
+            ],
+          ),
+          const SizedBox(height: KrezioSpace.md),
 
-        // Filters: status as an even grid of 4 tiles with counts + sort.
-        Row(
-          children: [
-            Expanded(
+          if (budgets.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: KrezioSpace.xl),
               child: Text(
-                'Limites por Categoria',
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: KrezioFont.bodyLarge, fontWeight: FontWeight.bold, color: primaryTextColor),
+                'Nenhuma categoria neste filtro.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: palette.secondaryText),
               ),
             ),
-            const SizedBox(width: KrezioSpace.sm),
-            PopupMenuButton<BudgetSort>(
-              tooltip: 'Ordenar',
-              initialValue: _sort,
-              onSelected: (s) => setState(() => _sort = s),
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: BudgetSort.usage, child: Text('Mais usados primeiro')),
-                PopupMenuItem(value: BudgetSort.name, child: Text('Nome (A–Z)')),
-                PopupMenuItem(value: BudgetSort.limit, child: Text('Maior limite')),
-              ],
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
+          if (budgets.isNotEmpty)
+            KrezioCard(
+              padding: EdgeInsets.zero,
+              child: Column(
                 children: [
-                  Icon(Icons.sort, size: 18, color: secondaryTextColor),
-                  const SizedBox(width: 4),
-                  Text(
-                    switch (_sort) {
-                      BudgetSort.usage => 'Uso',
-                      BudgetSort.name => 'Nome',
-                      BudgetSort.limit => 'Limite',
-                    },
-                    style: TextStyle(fontSize: KrezioFont.small, color: secondaryTextColor),
-                  ),
+                  for (final (index, budget) in budgets.indexed) ...[
+                    if (index > 0) Divider(height: 1, color: palette.border),
+                    _buildBudgetRow(context, budget, pace, palette),
+                  ],
                 ],
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: KrezioSpace.sm),
-        Row(
-          children: [
-            _statusTile(BudgetStatusFilter.all, 'Todos', all.length, KrezioColors.aiPurple),
-            const SizedBox(width: KrezioSpace.xs),
-            _statusTile(BudgetStatusFilter.ok, 'No controle', count(BudgetLevel.ok), KrezioColors.budgetOk),
-            const SizedBox(width: KrezioSpace.xs),
-            _statusTile(BudgetStatusFilter.warning, 'Atenção', count(BudgetLevel.warning), KrezioColors.budgetWarning),
-            const SizedBox(width: KrezioSpace.xs),
-            _statusTile(BudgetStatusFilter.over, 'Estourados', count(BudgetLevel.over), KrezioColors.budgetOver),
-          ],
-        ),
-        const SizedBox(height: KrezioSpace.md),
-
-        if (budgets.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: KrezioSpace.xl),
-            child: Text(
-              'Nenhuma categoria neste filtro.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: secondaryTextColor),
-            ),
-          ),
-        ...budgets.map((b) => _buildBudgetCard(context, b, primaryTextColor, secondaryTextColor)),
+        ],
       ],
     );
   }
 
-  Widget _statusTile(BudgetStatusFilter value, String label, int count, Color color) {
-    final selected = _status == value;
-    final border = isDark ? KrezioColors.darkBorder : KrezioColors.lightBorder;
-    return Expanded(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => setState(() => _status = value),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(vertical: KrezioSpace.sm, horizontal: 2),
+  Widget _legendItem(String label, Color color, KrezioPalette palette,
+      {bool marker = false}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: marker ? 2 : 14,
+          height: marker ? 12 : 6,
           decoration: BoxDecoration(
-            color: selected ? color.withOpacity(0.16) : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: selected ? color : border, width: selected ? 1.5 : 1),
-          ),
-          child: Column(
-            children: [
-              Text(
-                '$count',
-                style: TextStyle(fontSize: KrezioFont.bodyLarge, fontWeight: FontWeight.bold, color: color),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: KrezioFont.caption,
-                  fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+              color: color, borderRadius: BorderRadius.circular(3)),
+        ),
+        const SizedBox(width: 6),
+        Text(label,
+            style: TextStyle(fontSize: 12, color: palette.secondaryText)),
+      ],
+    );
+  }
+
+  Widget _statusTile(BudgetStatusFilter value, String label, int count,
+      KrezioPalette palette) {
+    final selected = _status == value;
+    return FilterChip(
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label),
+          const SizedBox(width: 4),
+          Text('$count', style: const TextStyle(fontWeight: FontWeight.w800)),
+        ],
+      ),
+      labelStyle: TextStyle(
+          fontSize: 12,
+          color: selected ? palette.accentText : palette.secondaryText),
+      showCheckmark: false,
+      selected: selected,
+      backgroundColor: palette.surface,
+      selectedColor: palette.accentSoft,
+      shape: const StadiumBorder(),
+      side: BorderSide(color: selected ? palette.accentBorder : palette.border),
+      onSelected: (_) => setState(() => _status = value),
+    );
+  }
+
+  Widget _progressBar(
+    double progress,
+    double pace,
+    BudgetLevel level,
+    KrezioPalette palette, {
+    double height = 5,
+  }) {
+    return Semantics(
+      label: '${(progress * 100).round()}% do orçamento usado. '
+          'Ritmo ideal hoje ${(pace * 100).round()}%.',
+      child: ExcludeSemantics(
+        child: LayoutBuilder(
+          builder: (context, constraints) => SizedBox(
+            height: height + 4,
+            child: Stack(
+              alignment: Alignment.centerLeft,
+              children: [
+                LinearProgressIndicator(
+                  value: progress.clamp(0.0, 1.0),
+                  minHeight: height,
+                  borderRadius: BorderRadius.circular(height / 2),
+                  backgroundColor: palette.progressTrack,
+                  color: _levelColor(level, palette),
                 ),
-              ),
-            ],
+                Positioned(
+                  left: (constraints.maxWidth - 2).clamp(0.0, double.infinity) *
+                      pace,
+                  top: 0,
+                  bottom: 0,
+                  child: Container(width: 2, color: palette.secondaryText),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildBudgetCard(
-    BuildContext context,
-    BudgetCategory b,
-    Color primaryTextColor,
-    Color secondaryTextColor,
-  ) {
-    final progress = b.percentage.clamp(0.0, 1.0);
-    final statusColor = _levelColor(b.level);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: KrezioSpace.md),
-      child: KrezioCard(
+  Widget _buildBudgetRow(BuildContext context, BudgetCategory budget,
+      double pace, KrezioPalette palette) {
+    final progress = budget.monthlyLimit > 0
+        ? budget.currentSpent / budget.monthlyLimit
+        : 0.0;
+    final status = budget.monthlyLimit <= 0
+        ? 'Sem limite definido'
+        : budget.currentSpent == 0
+            ? 'Nada gasto ainda neste mês'
+            : budget.statusText;
+    return InkWell(
+      onTap: () => _showEditBudgetDialog(context, budget),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(KrezioSpace.sm),
+                  width: 32,
+                  height: 32,
                   decoration: BoxDecoration(
-                    color: b.color.withOpacity(0.12),
-                    shape: BoxShape.circle,
+                    color: budget.color.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(9),
                   ),
-                  child: Icon(b.icon, color: b.color, size: 16),
+                  child: Icon(budget.icon, size: 17, color: budget.color),
                 ),
-                const SizedBox(width: KrezioSpace.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        b.name,
-                        style: TextStyle(fontSize: KrezioFont.body, fontWeight: FontWeight.bold, color: primaryTextColor),
-                      ),
-                      Text(
-                        '${Money.brl(b.currentSpent)} de ${Money.brl(b.monthlyLimit)}',
-                        style: TextStyle(fontSize: KrezioFont.caption, color: secondaryTextColor),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined, size: 16),
-                  color: secondaryTextColor,
-                  tooltip: 'Editar limite',
-                  onPressed: () => _showEditBudgetDialog(context, b),
-                ),
-                if (b.isCustom)
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 16),
-                    color: secondaryTextColor,
-                    tooltip: 'Remover categoria',
-                    onPressed: () => _confirmRemoveCategory(context, b),
-                  ),
-              ],
-            ),
-            const SizedBox(height: KrezioSpace.md),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 8,
-                backgroundColor: isDark ? KrezioColors.darkBackground : const Color(0xFFE5E7EB),
-                valueColor: AlwaysStoppedAnimation<Color>(statusColor),
-              ),
-            ),
-            const SizedBox(height: KrezioSpace.sm),
-            Row(
-              children: [
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    b.statusText,
-                    overflow: TextOverflow.ellipsis,
+                    budget.name,
                     style: TextStyle(
-                      fontSize: KrezioFont.caption,
-                      fontWeight: FontWeight.w600,
-                      color: b.level == BudgetLevel.ok ? secondaryTextColor : statusColor,
-                    ),
+                        color: palette.primaryText,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800),
                   ),
                 ),
-                Text(
-                  '${(b.monthlyLimit > 0 ? b.currentSpent / b.monthlyLimit * 100 : 0).toStringAsFixed(0)}%',
-                  style: TextStyle(fontSize: KrezioFont.caption, color: secondaryTextColor),
-                ),
+                if (budget.isCustom)
+                  PopupMenuButton<bool>(
+                    tooltip: 'Opções da categoria',
+                    onSelected: (remove) {
+                      if (remove) {
+                        _confirmRemoveCategory(context, budget);
+                      } else {
+                        _showEditBudgetDialog(context, budget);
+                      }
+                    },
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(value: false, child: Text('Editar limite')),
+                      PopupMenuItem(
+                          value: true, child: Text('Remover categoria')),
+                    ],
+                    icon: Icon(Icons.more_horiz,
+                        size: 20, color: palette.secondaryText),
+                  )
+                else
+                  IconButton(
+                    tooltip: 'Editar limite',
+                    onPressed: () => _showEditBudgetDialog(context, budget),
+                    icon:
+                        Icon(Icons.chevron_right, color: palette.secondaryText),
+                  ),
               ],
+            ),
+            Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: Money.brl(budget.currentSpent),
+                    style: TextStyle(
+                        color: palette.primaryText,
+                        fontWeight: FontWeight.w800),
+                  ),
+                  TextSpan(text: ' / ${Money.brl(budget.monthlyLimit)}'),
+                ],
+              ),
+              style: TextStyle(color: palette.secondaryText, fontSize: 13),
+            ),
+            const SizedBox(height: 8),
+            _progressBar(progress, pace, budget.level, palette),
+            const SizedBox(height: 6),
+            Text(
+              status,
+              style: TextStyle(
+                fontSize: 13,
+                color: budget.level == BudgetLevel.ok
+                    ? palette.secondaryText
+                    : _levelColor(budget.level, palette),
+              ),
             ),
           ],
         ),
@@ -370,32 +483,47 @@ class _BudgetsViewState extends State<BudgetsView> {
 
   /// Removing a category asks where its transactions go, so none is left
   /// without a category.
-  Future<void> _confirmRemoveCategory(BuildContext context, BudgetCategory b) async {
-    final count = repository.transactions.where((t) => t.category == b.category).length;
+  Future<void> _confirmRemoveCategory(
+      BuildContext context, BudgetCategory b) async {
+    final count =
+        repository.transactions.where((t) => t.category == b.category).length;
     if (count == 0) {
       _removeCategory(context, b);
       return;
     }
-    final targets = repository.budgets.where((x) => x.category != b.category).toList();
+    final targets =
+        repository.budgets.where((x) => x.category != b.category).toList();
     final moveTo = await showDialog<String>(
       context: context,
       builder: (ctx) => SimpleDialog(
         title: Text('Apagar ${b.name}?'),
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(KrezioSpace.xxl, 0, KrezioSpace.xxl, KrezioSpace.sm),
-            child: Text('$count ${count == 1 ? 'lançamento está' : 'lançamentos estão'} nesta categoria. Mover para:'),
+            padding: const EdgeInsets.fromLTRB(
+                KrezioSpace.xxl, 0, KrezioSpace.xxl, KrezioSpace.sm),
+            child: Text(
+                '$count ${count == 1 ? 'lançamento está' : 'lançamentos estão'} nesta categoria. Mover para:'),
           ),
           for (final t in targets)
             SimpleDialogOption(
               onPressed: () => Navigator.pop(ctx, t.category),
-              child: Row(children: [Icon(t.icon, size: 18, color: t.color), const SizedBox(width: KrezioSpace.sm), Text(t.name)]),
+              child: Row(children: [
+                Icon(t.icon, size: 18, color: t.color),
+                const SizedBox(width: KrezioSpace.sm),
+                Text(t.name)
+              ]),
             ),
           SimpleDialogOption(
             onPressed: () => Navigator.pop(ctx, 'expense_other'),
-            child: const Row(children: [Icon(Icons.more_horiz, size: 18), SizedBox(width: KrezioSpace.sm), Text('Outras despesas')]),
+            child: const Row(children: [
+              Icon(Icons.more_horiz, size: 18),
+              SizedBox(width: KrezioSpace.sm),
+              Text('Outras despesas')
+            ]),
           ),
-          SimpleDialogOption(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          SimpleDialogOption(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar')),
         ],
       ),
     );
@@ -403,14 +531,21 @@ class _BudgetsViewState extends State<BudgetsView> {
     _removeCategory(context, b, moveTo: moveTo);
   }
 
-  void _removeCategory(BuildContext context, BudgetCategory budget, {String? moveTo}) {
-    final undo = repository.deleteBudgetCategoryWithUndo(budget.category, moveTo: moveTo);
+  void _removeCategory(BuildContext context, BudgetCategory budget,
+      {String? moveTo}) {
+    final undo = repository.deleteBudgetCategoryWithUndo(budget.category,
+        moveTo: moveTo);
     if (undo == null) return;
-    showLedgerUndo(context, repository, ChatAction.restoration((_) => undo(), 'Categoria restaurada.'), 'Categoria apagada.');
+    showLedgerUndo(
+        context,
+        repository,
+        ChatAction.restoration((_) => undo(), 'Categoria restaurada.'),
+        'Categoria apagada.');
   }
 
   void _showEditBudgetDialog(BuildContext context, BudgetCategory b) {
-    final controller = TextEditingController(text: Money.groupedDecimal(b.monthlyLimit));
+    final controller =
+        TextEditingController(text: Money.groupedDecimal(b.monthlyLimit));
     final nameController = TextEditingController(text: b.name);
     showKrezioFormDialog(
       context,
@@ -428,7 +563,9 @@ class _BudgetsViewState extends State<BudgetsView> {
         final val = KrezioMoneyField.parse(controller.text);
         if (val == null) return false;
         final newName = nameController.text.trim();
-        if (b.isCustom && newName != b.name && !repository.renameBudgetCategory(b.category, newName)) {
+        if (b.isCustom &&
+            newName != b.name &&
+            !repository.renameBudgetCategory(b.category, newName)) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(newName.isEmpty
@@ -444,4 +581,3 @@ class _BudgetsViewState extends State<BudgetsView> {
     );
   }
 }
-

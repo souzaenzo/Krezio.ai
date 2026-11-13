@@ -77,6 +77,47 @@ void main() {
     expect(find.text(r'R$ 128.450,90'), findsWidgets);
   });
 
+  testWidgets('estimativa mensal reserva recorrências ainda fora do extrato do mês', (tester) async {
+    final now = DateTime.now();
+    final repository = FinancialRepository(seedDemo: false, persistChanges: false);
+    repository.addTransaction(FinancialTransaction(
+      id: 'salario',
+      title: 'Salário',
+      amount: 1000,
+      type: TransactionType.income,
+      category: 'salary',
+      paymentMethod: 'pix',
+      date: DateTime(now.year, now.month),
+    ));
+    for (final (id, amount, date) in [
+      ('internet', 100.0, DateTime(now.year, now.month - 1)),
+      ('telefone', 200.0, DateTime(now.year, now.month)),
+    ]) {
+      repository.addTransaction(FinancialTransaction(
+        id: id,
+        title: id,
+        amount: amount,
+        type: TransactionType.expense,
+        category: 'bills',
+        paymentMethod: 'pix',
+        date: date,
+        isRecurrent: true,
+        dueDay: now.day,
+      ));
+    }
+    await phone(tester);
+    await tester.pumpWidget(app(DashboardScreen(
+      repository: repository,
+      isDark: true,
+      onNavigateToChat: () {},
+      onNavigateToTransactions: () {},
+    )));
+
+    expect(repository.monthExpense, 200);
+    expect(find.textContaining(r'separando R$ 100,00 para contas em aberto'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('a legenda fica abaixo da rosca no celular e ao lado na web', (tester) async {
     for (final width in [360.0, 720.0]) {
       await tester.pumpWidget(MaterialApp(

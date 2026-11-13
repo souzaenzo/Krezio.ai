@@ -43,6 +43,7 @@ void main() {
       expect(calc('quanto é 15% de 230?'), contains('R\$ 34,50'));
       expect(calc('230 com 15% de desconto dá quanto?'), contains('R\$ 195,50'));
       expect(calc('quanto fica 1200 mais 10%?'), contains('R\$ 1.320,00'));
+      expect(calc('quanto fica 1200 com 10% de juros?'), contains('R\$ 1.320,00'));
       expect(calc('45 é quantos % de 300?'), contains('15%'));
       expect(calc('a netflix foi de 55,90 pra 59,90, quanto por cento subiu?'), contains('+7,2%'));
     });
@@ -54,6 +55,9 @@ void main() {
       expect(calc('se eu investir 200 por mês por 5 anos, quanto vou ter?'), contains('R\$ 15.324,77'));
       expect(calc('se eu guardar 300 por mês durante 2 anos a 1% ao mês quanto junto?'), contains('R\$ 8.092,04'));
       expect(calc('quanto rende 10 mil em 2 anos?'), contains('R\$ 12.107,45'));
+      expect(calc('quanto rende 1000 reais?'), contains('R\$ 1.100,34'));
+      expect(calc('quanto fica 1000 reais no CDI?'), contains('R\$ 1.100,34'));
+      expect(calc('quanto fica 1000 a 1% ao mês?'), contains('R\$ 1.126,83'));
       expect(calc('quanto é 1250 dividido por 4?'), contains('312,50'));
       expect(calc('quanto é 37 vezes 12?'), contains('444'));
     });
@@ -62,6 +66,7 @@ void main() {
       for (final p in ['gastei 15% do salário no mercado', 'gastei 50 no mercado no pix', 'quanto gastei esse mês?', 'paguei 230 com 15% de desconto no pix']) {
         expect(FinancialCalculator.answer(p), isNull, reason: p);
       }
+      expect(calc('quanto fica 1200 em 10x?'), isNull);
       expect(chat().send('vale a pena comprar um celular de 2000 à vista com 5% de desconto ou em 10x?').route, 'calc');
     });
   });

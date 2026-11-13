@@ -3851,7 +3851,11 @@ class LocalFinancialNlpEngine {
     r'por[cç](?:[aã]o|[oõ]es)\s+de\s+(?:carne|frango|peixe|queijo|frios|presunto|calabresa))(?![a-zà-úç])',
   );
 
+  static final _cashTerminal = RegExp(r'\bcaixas?\s+eletr[oô]nicos?\b');
+
   static String _resolveContextualCategory(String lower, String modelPredicted) {
+    // A cash terminal names a banking venue, not an electronics purchase.
+    lower = lower.replaceAll(_cashTerminal, ' ');
     if (_fuelPurchase.hasMatch(lower)) return 'transport';
 
     final inSupermarket = _supermarketVenues.hasMatch(lower);

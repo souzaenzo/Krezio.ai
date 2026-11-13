@@ -204,10 +204,11 @@ class FinancialCalculator {
     return CalcAnswer('🧮 $t$caveat', 'calc', spoken: t.replaceAll('**', ''));
   }
 
-  static ({double rate, bool said}) _rateIn(String s) {
+  static ({double rate, bool said, bool periodic}) _rateIn(String s) {
     final r = RegExp('(?:a|rendendo|com\\s+rendimento\\s+de|com\\s+juros\\s+de|com\\s+taxa\\s+de|que\\s+rende|rende|taxa\\s+de)\\s+$_pct$_rateUnit').firstMatch(s);
-    if (r == null) return (rate: defaultMonthlyRate, said: false);
-    return (rate: _monthly(_rate(r.group(1)!), r.group(2)), said: true);
+    if (r == null) return (rate: defaultMonthlyRate, said: false, periodic: false);
+    final unit = r.group(2);
+    return (rate: _monthly(_rate(r.group(1)!), unit), said: true, periodic: unit != null);
   }
 
   static int? _months(String count, String unit) {
@@ -251,14 +252,19 @@ class FinancialCalculator {
       return CalcAnswer('📈 $t$note', 'calc', spoken: t.replaceAll('**', ''));
     }
 
-    // Sem prazo explícito: "quanto rende 1000 reais no cdi?" / "na poupança?"
-    final noDuration = RegExp('\\b(?:quanto\\s+(?:rende|renderia|vira|viraria|fica|ficaria|vai\\s+render)|rende\\s+quanto)\\s+(?:r\\s*)?$_num\\s*(?:reais\\s+)?'
-            '(?:no\\s+cdi|na\\s+selic|no\\s+tesouro|na\\s+poupanca|em\\s+cdb|no\\s+cdb)?\\b')
-        .firstMatch(s);
+    // Sem prazo, "quanto fica" e "quanto vira" também aparecem em contas
+    // simples. Exija verbo de rendimento, produto ou taxa de rendimento.
+    final amount = '(?:r\\s*)?$_num(?:\\s+reais)?';
+    final rateInfo = _rateIn(s);
+    final noDuration =
+        RegExp('\\b(?:quanto\\s+(?:rende|renderia|vai\\s+render)|rende\\s+quanto)\\s+$amount\\b').firstMatch(s) ??
+        RegExp('\\bquanto\\s+(?:vira|viraria|fica|ficaria)\\s+$amount\\s+'
+                '(?:no\\s+cdi|na\\s+selic|no\\s+tesouro|na\\s+poupanca|em\\s+cdb|no\\s+cdb)\\b')
+            .firstMatch(s) ??
+        (rateInfo.periodic ? RegExp('\\bquanto\\s+(?:vira|viraria|fica|ficaria)\\s+$amount\\b').firstMatch(s) : null);
     if (noDuration == null) return null;
     final p = _value(noDuration.group(1)!, noDuration.group(2));
     if (p <= 0) return null;
-    final rateInfo = _rateIn(s);
     final isPoupanca = !rateInfo.said && RegExp(r'\bpoupanca\b').hasMatch(s);
     final i = isPoupanca ? 0.005 : rateInfo.rate;
     final gain1m = p * i;

@@ -13,7 +13,8 @@ void main() {
   late LocalFinancialNlpEngine engine;
 
   setUpAll(() async {
-    engine = LocalFinancialNlpEngine.fromJsonString(await File('models/on_device/krezio_nlp_model.json').readAsString());
+    engine = LocalFinancialNlpEngine.fromJsonString(
+        await File('models/on_device/krezio_nlp_model.json').readAsString());
   });
 
   Future<FinancialRepository> repo() async {
@@ -23,7 +24,8 @@ void main() {
     return r;
   }
 
-  Future<void> pump(WidgetTester tester, FinancialRepository r, int initialIndex) async {
+  Future<void> pump(
+      WidgetTester tester, FinancialRepository r, int initialIndex) async {
     await tester.binding.setSurfaceSize(const Size(400, 900));
     // A fonte de teste (Ahem) é bem mais larga que a real e acusa estouros de
     // layout que não existem no aparelho. Este teste é sobre o botão voltar;
@@ -47,24 +49,37 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
   }
 
-  int currentTab(WidgetTester tester) => tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex;
+  void expectSelectedTab(WidgetTester tester, String label) {
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Semantics &&
+            widget.properties.label == label &&
+            widget.properties.selected == true,
+      ),
+      findsOneWidget,
+    );
+  }
 
   testWidgets('link direto abre na aba pedida', (tester) async {
     await pump(tester, await repo(), 2);
-    expect(currentTab(tester), 2);
+    expectSelectedTab(tester, 'César');
   });
 
-  testWidgets('voltar fora do Início vai para o Início, sem fechar o app', (tester) async {
+  testWidgets('voltar fora do Início vai para o Início, sem fechar o app',
+      (tester) async {
     await pump(tester, await repo(), 3);
     final handled = await tester.binding.handlePopRoute();
     await tester.pump();
     expect(handled, isTrue, reason: 'o app tratou o voltar (não fechou)');
-    expect(currentTab(tester), 0);
+    expectSelectedTab(tester, 'Início');
   });
 
-  testWidgets('voltar no Início segue o comportamento normal (sai do app)', (tester) async {
+  testWidgets('voltar no Início segue o comportamento normal (sai do app)',
+      (tester) async {
     await pump(tester, await repo(), 0);
     final handled = await tester.binding.handlePopRoute();
-    expect(handled, isFalse, reason: 'sem rota para voltar, o sistema fecha o app');
+    expect(handled, isFalse,
+        reason: 'sem rota para voltar, o sistema fecha o app');
   });
 }
