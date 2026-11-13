@@ -1635,7 +1635,10 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
               ],
               child: Container(
-                constraints: const BoxConstraints(minHeight: 38),
+                constraints: BoxConstraints(
+                  minHeight: 38,
+                  maxWidth: index == 0 ? 152 : double.infinity,
+                ),
                 padding: const EdgeInsets.symmetric(horizontal: KrezioSpace.md),
                 decoration: ShapeDecoration(
                   color: palette.surface,
@@ -1646,8 +1649,14 @@ class _ChatScreenState extends State<ChatScreen> {
                   children: [
                     Icon(icon, size: 14, color: palette.accentText),
                     const SizedBox(width: 6),
-                    Text(category,
-                        style: const TextStyle(fontSize: KrezioFont.bodySmall)),
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(category,
+                            style: const TextStyle(
+                                fontSize: KrezioFont.bodySmall)),
+                      ),
+                    ),
                     const SizedBox(width: KrezioSpace.xs),
                     Icon(Icons.expand_more_rounded,
                         size: 16, color: palette.secondaryText),
@@ -1657,15 +1666,21 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             if (index == 0) ...[
               const SizedBox(width: KrezioSpace.sm),
-              ActionChip(
-                avatar: Icon(Icons.bolt_rounded,
-                    size: 16, color: palette.accentText),
-                label: const Text('Registrar gasto'),
-                backgroundColor: palette.accentSoft,
-                side: BorderSide(color: palette.accentBorder),
-                shape: const StadiumBorder(),
-                onPressed: () =>
-                    _fillComposer('Gastei 45,90 no mercado no Pix'),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 152),
+                child: ActionChip(
+                  avatar: Icon(Icons.bolt_rounded,
+                      size: 16, color: palette.accentText),
+                  label: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('Registrar gasto'),
+                  ),
+                  backgroundColor: palette.accentSoft,
+                  side: BorderSide(color: palette.accentBorder),
+                  shape: const StadiumBorder(),
+                  onPressed: () =>
+                      _fillComposer('Gastei 45,90 no mercado no Pix'),
+                ),
               ),
             ],
           ],
