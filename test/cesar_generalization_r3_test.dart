@@ -310,7 +310,7 @@ void main() {
       'quantas vezes eu usei o uber esse mês?': ((r) => r == 'report:count', '1 lançamento'),
       'quando foi a última vez que eu paguei aluguel?': ((r) => r == 'report:lastTime', 'Aluguel'),
       'o joão ainda tá me devendo quanto?': ((r) => r == 'report:debtors', '150'),
-      'tem alguém me devendo grana?': ((r) => r == 'report:debtors', 'João'),
+      'tem alguém me devendo grana?': ((r) => r == 'planner:charge', 'João'),
       'sobrou alguma coisa do mês?': ((r) => r == 'report:overview', '2.551,60'),
       'gastei mais do que na semana passada?': ((r) => r == 'report:overview', 'semana'),
       'dá um resumo de como tô': ((r) => r.startsWith('report:'), ''),
