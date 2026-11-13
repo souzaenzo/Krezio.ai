@@ -1605,17 +1605,9 @@ class _ChatScreenState extends State<ChatScreen> {
       padding: const EdgeInsets.symmetric(horizontal: KrezioSpace.lg),
       child: Row(
         children: [
-          ActionChip(
-            avatar:
-                Icon(Icons.bolt_rounded, size: 16, color: palette.accentText),
-            label: const Text('Registrar gasto'),
-            backgroundColor: palette.accentSoft,
-            side: BorderSide(color: palette.accentBorder),
-            shape: const StadiumBorder(),
-            onPressed: () => _fillComposer('Gastei 45,90 no mercado no Pix'),
-          ),
-          for (final (category, icon, items) in _suggestionCategories) ...[
-            const SizedBox(width: KrezioSpace.sm),
+          for (final (index, (category, icon, items))
+              in _suggestionCategories.indexed) ...[
+            if (index > 0) const SizedBox(width: KrezioSpace.sm),
             PopupMenuButton<String>(
               tooltip: 'Sugestões: $category',
               onSelected: _fillComposer,
@@ -1663,6 +1655,19 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ),
             ),
+            if (index == 0) ...[
+              const SizedBox(width: KrezioSpace.sm),
+              ActionChip(
+                avatar: Icon(Icons.bolt_rounded,
+                    size: 16, color: palette.accentText),
+                label: const Text('Registrar gasto'),
+                backgroundColor: palette.accentSoft,
+                side: BorderSide(color: palette.accentBorder),
+                shape: const StadiumBorder(),
+                onPressed: () =>
+                    _fillComposer('Gastei 45,90 no mercado no Pix'),
+              ),
+            ],
           ],
         ],
       ),
