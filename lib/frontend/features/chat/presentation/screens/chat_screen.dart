@@ -1958,12 +1958,12 @@ class _ChatScreenState extends State<ChatScreen> {
           if (!isUser)
             ValueListenableBuilder<VoiceAvailability>(
               valueListenable: _voiceSynthesis.availabilityNotifier,
-              builder: (_, availability, _) =>
+              builder: (_, availability, child) =>
                   availability == VoiceAvailability.unavailable
                       ? const SizedBox.shrink()
                       : ValueListenableBuilder<bool>(
                           valueListenable: _voiceSynthesis.isSpeakingNotifier,
-                          builder: (_, isSpeaking, _) => IconButton(
+                          builder: (_, isSpeaking, child) => IconButton(
                             icon: Icon(
                                 isSpeaking
                                     ? Icons.stop_circle_outlined
