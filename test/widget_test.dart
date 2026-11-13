@@ -31,18 +31,16 @@ void main() {
         home: Scaffold(
           body: AiInsightCard(
             insightText: 'Você economizou 40% este mês.',
-            isDark: false,
             onAskAi: () => asked = true,
           ),
         ),
       ),
     );
 
-    expect(find.text('Insight do Krezio.ai'), findsOneWidget);
-    expect(find.text('Você economizou 40% este mês.'), findsOneWidget);
-    expect(find.text('Conversar com a IA'), findsOneWidget);
+    expect(find.text('César: Você economizou 40% este mês.'), findsOneWidget);
+    expect(find.text('Conversar com o César'), findsOneWidget);
 
-    await tester.tap(find.text('Conversar com a IA'));
+    await tester.tap(find.text('Conversar com o César'));
     expect(asked, true);
   });
 }
